@@ -5,18 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class CompanyProfile extends Model
+class OfferSetting extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'user_id',
-        'company_name',
-        'vat_number',
-        'trade_register_number',
-        'address',
-        'contact_email',
-        'phone_number',
-        'logo_path',
+        'prefix',
+        'suffix',
+        'start_number',
+        'next_number',
     ];
 }

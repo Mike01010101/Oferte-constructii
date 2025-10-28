@@ -6,11 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
 
-    <!-- Scripts -->
-    <script src="{{ asset('js/app.js') }}" defer></script>
-    
-    <!-- Styles -->
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <!-- Vite Scripts and Styles -->
+    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     <style>
         .sidebar {
             min-height: 100vh; /* Meniul va ocupa toată înălțimea ecranului */
@@ -22,21 +19,21 @@
         
         {{-- Meniul Vertical din Stânga --}}
         <div class="sidebar bg-dark text-white p-3" style="width: 280px;">
-            <h4 class="text-center mb-4">Aplicatie Oferte</h4>
+            <h4 class="text-center mb-4">Aplicatie oferte</h4>
             
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
                     <a href="{{ route('home') }}" class="nav-link active text-white">
-                        Panou de Control
+                        Panou de control
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
+                    <a href="{{ route('oferte.index') }}" class="nav-link text-white">
                         Oferte
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
+                    <a href="{{ route('clienti.index') }}" class="nav-link text-white">
                         Clienți
                     </a>
                 </li>
@@ -46,9 +43,26 @@
                     </a>
                 </li>
                 <hr class="text-secondary">
+                <li class="nav-item">
+                    <a class="nav-link text-secondary">PERSONALIZARE</a>
+                </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
-                        Setări
+                    <a href="{{ route('template.show') }}" class="nav-link text-white">
+                        Creator șabloane
+                    </a>
+                </li>
+                <hr class="text-secondary">
+                <li class="nav-item">
+                    <a class="nav-link text-secondary">CONFIGURARE</a>
+                </li>
+                <li>
+                    <a href="{{ route('profile.show') }}" class="nav-link text-white">
+                        Profilul firmei
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('offer-settings.show') }}" class="nav-link text-white">
+                        Setări ofertare
                     </a>
                 </li>
             </ul>

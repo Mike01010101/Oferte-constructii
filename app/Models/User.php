@@ -45,4 +45,44 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Definește relația "one-to-one" cu profilul companiei.
+     */
+    public function companyProfile()
+    {
+        return $this->hasOne(CompanyProfile::class);
+    }
+
+    /**
+     * Definește relația "one-to-one" cu setările de ofertare.
+     */
+    public function offerSetting()
+    {
+        return $this->hasOne(OfferSetting::class);
+    }
+
+    /**
+     * Definește relația "one-to-one" cu setările de șablon.
+     */
+    public function templateSetting()
+    {
+        return $this->hasOne(TemplateSetting::class);
+    }
+
+    /**
+     * Definește relația "one-to-many" cu clienții.
+     */
+    public function clients()
+    {
+        return $this->hasMany(Client::class);
+    }
+
+    /**
+     * Definește relația "one-to-many" cu ofertele.
+     */
+    public function offers()
+    {
+        return $this->hasMany(Offer::class);
+    }
 }
