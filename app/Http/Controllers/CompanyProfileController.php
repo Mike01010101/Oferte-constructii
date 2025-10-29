@@ -14,8 +14,8 @@ class CompanyProfileController extends Controller
      */
     public function show()
     {
-        // Găsim profilul firmei pentru utilizatorul autentificat sau creăm unul nou, gol
-        $profile = Auth::user()->companyProfile ?? new CompanyProfile();
+        // Preluăm profilul de la firmă
+        $profile = Auth::user()->company->companyProfile ?? new CompanyProfile();
         
         return view('profile.show', compact('profile'));
     }
@@ -25,7 +25,7 @@ class CompanyProfileController extends Controller
      */
     public function update(Request $request)
     {
-        $user = Auth::user();
+        $company = Auth::user()->company;
 
         $validatedData = $request->validate([
             'company_name' => 'required|string|max:255',
@@ -34,14 +34,16 @@ class CompanyProfileController extends Controller
             'address' => 'nullable|string',
             'contact_email' => 'nullable|email|max:255',
             'phone_number' => 'nullable|string|max:50',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validare pentru imagine
+            'iban' => 'nullable|string|max:255',
+            'bank_name' => 'nullable|string|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         // Gestionarea upload-ului pentru logo
         if ($request->hasFile('logo')) {
             // Ștergem logo-ul vechi dacă există
-            if ($user->companyProfile && $user->companyProfile->logo_path) {
-                Storage::disk('public')->delete($user->companyProfile->logo_path);
+            if ($company->companyProfile && $company->companyProfile->logo_path) {
+                Storage::disk('public')->delete($company->companyProfile->logo_path);
             }
             
             // Salvăm noul logo și obținem calea
@@ -49,9 +51,9 @@ class CompanyProfileController extends Controller
             $validatedData['logo_path'] = $path;
         }
 
-        // Actualizăm sau creăm profilul cu datele validate
-        $user->companyProfile()->updateOrCreate(
-            ['user_id' => $user->id],
+        // Actualizăm sau creăm profilul folosind relația de la firmă
+        $company->companyProfile()->updateOrCreate(
+            ['company_id' => $company->id],
             $validatedData
         );
 

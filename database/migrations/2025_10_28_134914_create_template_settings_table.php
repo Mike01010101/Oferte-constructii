@@ -13,7 +13,7 @@ return new class extends Migration
 {
     Schema::create('template_settings', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('user_id')->constrained()->onDelete('cascade');
+        $table->foreignId('company_id')->constrained()->onDelete('cascade');
         $table->string('accent_color')->default('#0d6efd'); // O culoare albastră implicită
         $table->string('logo_alignment')->default('left'); // Valori posibile: left, center, right
         $table->text('footer_text')->nullable();

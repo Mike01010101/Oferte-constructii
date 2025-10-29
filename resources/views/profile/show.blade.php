@@ -48,11 +48,22 @@
                                 <label for="contact_email" class="form-label">E-mail contact</label>
                                 <input type="email" class="form-control" id="contact_email" name="contact_email" value="{{ old('contact_email', $profile->contact_email) }}">
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="phone_number" class="form-label">Telefon contact</label>
-                                <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ old('phone_number', $profile->phone_number) }}">
+                                                            <div class="col-md-6 mb-3">
+                                    <label for="phone_number" class="form-label">Telefon contact</label>
+                                    <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ old('phone_number', $profile->phone_number) }}">
+                                </div>
                             </div>
-                        </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="iban" class="form-label">Cont bancar (IBAN)</label>
+                                    <input type="text" class="form-control" id="iban" name="iban" value="{{ old('iban', $profile->iban) }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="bank_name" class="form-label">Banca</label>
+                                    <input type="text" class="form-control" id="bank_name" name="bank_name" value="{{ old('bank_name', $profile->bank_name) }}">
+                                </div>
+                            </div>
                     </div>
 
                     <!-- Coloana dreapta pentru logo -->

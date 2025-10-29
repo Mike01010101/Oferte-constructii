@@ -2,52 +2,50 @@
 
 @section('content')
 <div class="container-fluid">
-    <h1 class="h3 mb-4">Creează o ofertă nouă</h1>
-
-    {{-- Afișează erorile de sesiune --}}
-    @if (session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
-
-    {{-- Afișează TOATE erorile de validare --}}
-    @if ($errors->any())
-        <div class="alert alert-danger">
-            <strong>A apărut o problemă:</strong>
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    <h1 class="h3 mb-4">Editează oferta: {{ $offer->offer_number }}</h1>
 
     @if (session('error')) <div class="alert alert-danger">{{ session('error') }}</div> @endif
-    
-    <form method="POST" action="{{ route('oferte.store') }}">
+
+    <form method="POST" action="{{ route('oferte.update', $offer->id) }}">
         @csrf
+        @method('PUT')
         
         <div class="card">
             <div class="card-header">Detalii ofertă</div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label for="client_id" class="form-label">Client*</label>
-                        <select class="form-select @error('client_id') is-invalid @enderror" id="client_id" name="client_id" required>
-                            <option value="">Selectează un client</option>
+                        <select class="form-select" id="client_id" name="client_id" required>
                             @foreach ($clients as $client)
-                                <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>{{ $client->name }}</option>
+                                <option value="{{ $client->id }}" {{ old('client_id', $offer->client_id) == $client->id ? 'selected' : '' }}>{{ $client->name }}</option>
                             @endforeach
                         </select>
-                        @error('client_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
-                    <div class="col-md-4 mb-3">
-                         <label for="offer_number" class="form-label">Număr ofertă</label>
-                         <input type="text" class="form-control" id="offer_number" name="offer_number" value="{{ $offerNumber }}" readonly>
+                    <div class="col-md-3 mb-3">
+                         <label for="offer_number" class="form-label">Număr ofertă*</label>
+                         <input type="text" class="form-control" id="offer_number" name="offer_number" value="{{ old('offer_number', $offer->offer_number) }}" required>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-2 mb-3">
                         <label for="offer_date" class="form-label">Data ofertei*</label>
-                        <input type="date" class="form-control @error('offer_date') is-invalid @enderror" id="offer_date" name="offer_date" value="{{ old('offer_date', now()->format('Y-m-d')) }}" required>
-                         @error('offer_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <input type="date" class="form-control" id="offer_date" name="offer_date" value="{{ old('offer_date', \Carbon\Carbon::parse($offer->offer_date)->format('Y-m-d')) }}" required>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="status" class="form-label">Status*</label>
+                        <select class="form-select" id="status" name="status" required>
+                            @foreach ($statuses as $key => $value)
+                                <option value="{{ $key }}" {{ old('status', $offer->status) == $key ? 'selected' : '' }}>{{ $value }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="assigned_to_user_id" class="form-label">Alocată lui</label>
+                        <select class="form-select" id="assigned_to_user_id" name="assigned_to_user_id">
+                            <option value="">N/A</option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}" {{ old('assigned_to_user_id', $offer->assigned_to_user_id) == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
             </div>
@@ -56,33 +54,38 @@
         <div class="card mt-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 Elemente ofertă
-                <div>
-                    <div class="form-check form-check-inline form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" id="price-mode-toggle">
-                        <label class="form-check-label" for="price-mode-toggle">Introdu prețuri totale</label>
-                    </div>
-                    <button type="button" id="add-item-btn" class="btn btn-sm btn-success">Adaugă poziție</button>
-                </div>
+                <button type="button" id="add-item-btn" class="btn btn-sm btn-success">Adaugă rând</button>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
-                            <thead>
                             <tr>
                                 <th style="width: 30%;">Descriere</th>
                                 <th style="width: 8%;">U.M.</th>
                                 <th style="width: 8%;">Cant.</th>
-                                @if($settings->show_material_column) <th class="price-col">Material <span class="price-mode-label">(unitar)</span></th> @endif
-                                @if($settings->show_labor_column) <th class="price-col">Manoperă <span class="price-mode-label">(unitar)</span></th> @endif
-                                @if($settings->show_equipment_column) <th class="price-col">Utilaj <span class="price-mode-label">(unitar)</span></th> @endif
+                                @if($settings->show_material_column) <th class="price-col">Material</th> @endif
+                                @if($settings->show_labor_column) <th class="price-col">Manoperă</th> @endif
+                                @if($settings->show_equipment_column) <th class="price-col">Utilaj</th> @endif
                                 @if($settings->show_unit_price_column) <th class="price-col text-end">Preț Unitar</th> @endif
                                 <th class="price-col text-end">Total</th>
                                 <th style="width: 5%;"></th>
                             </tr>
                         </thead>
                         <tbody id="offer-items-tbody">
-                            {{-- Rândurile generate de JavaScript --}}
+                            @foreach (old('items', $offer->items->toArray()) as $index => $item)
+                                <tr class="offer-item-row">
+                                    <td><input type="text" name="items[{{ $index }}][description]" class="form-control form-control-sm" value="{{ $item['description'] }}" required></td>
+                                    <td><input type="number" name="items[{{ $index }}][quantity]" class="form-control form-control-sm quantity" step="0.01" value="{{ $item['quantity'] }}" required></td>
+                                    <td><input type="text" name="items[{{ $index }}][unit_measure]" class="form-control form-control-sm" value="{{ $item['unit_measure'] }}" required></td>
+                                    @if($settings->show_material_column) <td><input type="number" name="items[{{ $index }}][material_price]" class="form-control form-control-sm price-input material-price" step="0.01" value="{{ $item['material_price'] ?? '0.00' }}"></td> @endif
+                                    @if($settings->show_labor_column) <td><input type="number" name="items[{{ $index }}][labor_price]" class="form-control form-control-sm price-input labor-price" step="0.01" value="{{ $item['labor_price'] ?? '0.00' }}"></td> @endif
+                                    @if($settings->show_equipment_column) <td><input type="number" name="items[{{ $index }}][equipment_price]" class="form-control form-control-sm price-input equipment-price" step="0.01" value="{{ $item['equipment_price'] ?? '0.00' }}"></td> @endif
+                                    @if($settings->show_unit_price_column) <td class="text-end align-middle unit-price-total">0.00</td> @endif
+                                    <td class="text-end align-middle line-total">0.00</td>
+                                    <td><button type="button" class="btn btn-sm btn-danger remove-item-btn">X</button></td>
+                                </tr>
+                            @endforeach
                         </tbody>
                         <tfoot>
                             <tr>
@@ -97,16 +100,15 @@
             </div>
         </div>
 
-        <!-- SECȚIUNEA DE JOS A FORMULARULUI (LIPSEA) -->
         <div class="card mt-4">
             <div class="card-header">Note adiționale</div>
             <div class="card-body">
-                <textarea class="form-control" name="notes" rows="3" placeholder="Informații suplimentare, termene, condiții speciale...">{{ old('notes') }}</textarea>
+                <textarea class="form-control" name="notes" rows="3">{{ old('notes', $offer->notes) }}</textarea>
             </div>
         </div>
 
         <div class="mt-4">
-            <button type="submit" class="btn btn-primary">Salvează oferta</button>
+            <button type="submit" class="btn btn-primary">Salvează modificările</button>
             <a href="{{ route('oferte.index') }}" class="btn btn-secondary">Anulează</a>
         </div>
     </form>

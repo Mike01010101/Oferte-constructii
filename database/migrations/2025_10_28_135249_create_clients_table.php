@@ -13,7 +13,7 @@ return new class extends Migration
 {
     Schema::create('clients', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('user_id')->constrained()->onDelete('cascade');
+        $table->foreignId('company_id')->constrained()->onDelete('cascade');
         $table->string('name');
         $table->string('vat_number')->nullable(); // CUI/CIF
         $table->string('trade_register_number')->nullable();

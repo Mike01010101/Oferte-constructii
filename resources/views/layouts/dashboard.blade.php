@@ -2,6 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
@@ -52,6 +53,17 @@
                     </a>
                 </li>
                 <hr class="text-secondary">
+                @role('Owner|Administrator')
+                <li class="nav-item">
+                    <a class="nav-link text-secondary">MANAGEMENT</a>
+                </li>
+                <li>
+                    <a href="{{ route('utilizatori.index') }}" class="nav-link text-white">
+                        Management utilizatori
+                    </a>
+                </li>
+                @endrole
+                <hr class="text-secondary">
                 <li class="nav-item">
                     <a class="nav-link text-secondary">CONFIGURARE</a>
                 </li>
@@ -94,5 +106,7 @@
         </main>
         
     </div>
+
+    @stack('scripts')
 </body>
 </html>

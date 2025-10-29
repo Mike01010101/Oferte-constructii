@@ -14,7 +14,9 @@ class OfferItem extends Model
         'description',
         'quantity',
         'unit_measure',
-        'unit_price',
+        'material_price',
+        'labor_price',
+        'equipment_price',
         'total',
     ];
 

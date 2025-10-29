@@ -10,8 +10,12 @@ class TemplateSetting extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'company_id',
+        'layout',
+        'font_family',
+        'table_style',
         'accent_color',
+        'document_title',
         'logo_alignment',
         'footer_text',
     ];

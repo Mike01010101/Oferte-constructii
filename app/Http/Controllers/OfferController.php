@@ -3,36 +3,46 @@
 namespace App\Http\Controllers;
 
 use App\Models\Offer;
-use App\Models\Client;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 
 class OfferController extends Controller
 {
+    /**
+     * Afișează lista de oferte.
+     */
     public function index()
     {
-        $offers = Auth::user()->offers()->with('client')->latest()->paginate(15);
+        // Preluăm ofertele inclusiv relațiile 'client' și 'assignedTo' pentru a evita query-uri multiple
+        $offers = Auth::user()->company->offers()->with(['client', 'assignedTo'])->latest()->paginate(15);
         return view('offers.index', compact('offers'));
     }
 
+    /**
+     * Afișează formularul de creare a unei oferte noi.
+     */
     public function create()
     {
-        $clients = Auth::user()->clients()->orderBy('name')->get();
-        $settings = Auth::user()->offerSetting;
+        $company = Auth::user()->company;
+        $clients = $company->clients()->orderBy('name')->get();
+        $settings = $company->offerSetting;
 
         if (!$settings) {
-            return redirect()->route('offer-settings.show')
-                ->with('error', 'Vă rugăm să configurați mai întâi setările de ofertare.');
+            return redirect()->route('offer-settings.show')->with('error', 'Vă rugăm să configurați mai întâi setările de ofertare.');
         }
 
-        $nextNumber = $settings->next_number;
-        $offerNumber = ($settings->prefix ?? '') . $nextNumber . ($settings->suffix ?? '');
+        $offerNumber = ($settings->prefix ?? '') . $settings->next_number . ($settings->suffix ?? '');
         
-        return view('offers.create', compact('clients', 'offerNumber'));
+        return view('offers.create', compact('clients', 'offerNumber', 'settings'));
     }
 
+    /**
+     * Salvează o ofertă nouă în baza de date.
+     */
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -42,99 +52,176 @@ class OfferController extends Controller
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:0',
+            'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_measure' => 'required|string|max:20',
-            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.material_price' => 'nullable|numeric|min:0',
+            'items.*.labor_price' => 'nullable|numeric|min:0',
+            'items.*.equipment_price' => 'nullable|numeric|min:0',
         ]);
 
         try {
             DB::beginTransaction();
-            
-            $user = Auth::user();
-            $grandTotal = 0;
+            $company = Auth::user()->company;
+            $items = $validatedData['items'];
 
-            // Calculăm totalul general
-            foreach ($validatedData['items'] as $item) {
-                $grandTotal += $item['quantity'] * $item['unit_price'];
+            $subtotal_de_baza = 0;
+            foreach ($items as $item) {
+                $lineTotal = ($item['material_price'] ?? 0) + ($item['labor_price'] ?? 0) + ($item['equipment_price'] ?? 0);
+                $subtotal_de_baza += ($item['quantity'] ?? 0) * $lineTotal;
             }
 
-            // Creăm oferta
-            $offer = $user->offers()->create([
+            $offer = $company->offers()->create([
                 'client_id' => $validatedData['client_id'],
+                'status' => 'Draft',
                 'offer_number' => $validatedData['offer_number'],
                 'offer_date' => Carbon::parse($validatedData['offer_date']),
                 'notes' => $validatedData['notes'],
-                'total_value' => $grandTotal,
+                'total_value' => $subtotal_de_baza, // Salvăm MEREU subtotalul de bază
             ]);
 
-            // Adăugăm elementele
-            foreach ($validatedData['items'] as $itemData) {
-                $offer->items()->create([
-                    'description' => $itemData['description'],
-                    'quantity' => $itemData['quantity'],
-                    'unit_measure' => $itemData['unit_measure'],
-                    'unit_price' => $itemData['unit_price'],
-                    'total' => $itemData['quantity'] * $itemData['unit_price'],
-                ]);
+            foreach ($items as $itemData) {
+                 $lineTotalValue = ($itemData['material_price'] ?? 0) + ($itemData['labor_price'] ?? 0) + ($itemData['equipment_price'] ?? 0);
+                 $itemData['total'] = ($itemData['quantity'] ?? 0) * $lineTotalValue;
+                 $offer->items()->create($itemData);
             }
 
-            // Actualizăm numărul următor în setări
-            $settings = $user->offerSetting;
-            if ($settings) {
-                $settings->increment('next_number');
-            }
-
+            $company->offerSetting?->increment('next_number');
             DB::commit();
-
             return redirect()->route('oferte.index')->with('success', 'Oferta a fost creată cu succes!');
-
-                } catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'A apărut o eroare la salvarea ofertei: ' . $e->getMessage())->withInput();
         }
     }
-
+    
     /**
-     * Afișează detaliile unei oferte specifice.
+     * Afișează detaliile unei oferte (pagina de vizualizare).
      */
     public function show(Offer $oferte)
     {
-        // Asigură-te că oferta aparține utilizatorului autentificat
-        if ($oferte->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $offer = $oferte;
+        if ($offer->company_id !== Auth::user()->company_id) { abort(403); }
 
-        // Încarcă relațiile necesare pentru a le folosi în view
-        $oferte->load(['client', 'items']);
+        $offer->load(['client', 'items', 'assignedTo']);
         
-        $companyProfile = Auth::user()->companyProfile;
-        $templateSettings = Auth::user()->templateSetting;
+        $company = Auth::user()->company;
+        $companyProfile = $company->companyProfile;
+        $templateSettings = $company->templateSetting;
+        $offerSettings = $company->offerSetting;
 
-        return view('offers.show', [
-            'offer' => $oferte,
-            'companyProfile' => $companyProfile,
-            'templateSettings' => $templateSettings,
-        ]);
+        return view('offers.show', compact('offer', 'companyProfile', 'templateSettings', 'offerSettings'));
     }
 
+    /**
+     * Afișează formularul de editare pentru o ofertă existentă.
+     */
+    public function edit(Offer $oferte)
+    {
+        $offer = $oferte;
+        if ($offer->company_id !== Auth::user()->company_id) { abort(403); }
+
+        $company = Auth::user()->company;
+        $clients = $company->clients()->orderBy('name')->get();
+        $users = $company->users()->orderBy('name')->get();
+        $statuses = Offer::STATUSES;
+        $settings = $company->offerSetting;
+        
+        return view('offers.edit', compact('offer', 'clients', 'users', 'statuses', 'settings'));
+    }
+
+    /**
+     * Actualizează o ofertă existentă în baza de date.
+     */
+    public function update(Request $request, Offer $oferte)
+    {
+        $offer = $oferte;
+        if ($offer->company_id !== Auth::user()->company_id) { abort(403); }
+
+        $validatedData = $request->validate([
+            'client_id' => 'required|exists:clients,id',
+            'assigned_to_user_id' => 'nullable|exists:users,id',
+            'status' => ['required', Rule::in(array_keys(Offer::STATUSES))],
+            'offer_number' => ['required', 'string', Rule::unique('offers')->ignore($offer->id)],
+            'offer_date' => 'required|date',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.description' => 'required|string',
+            'items.*.quantity' => 'required|numeric|min:0',
+            'items.*.unit_measure' => 'required|string|max:20',
+            'items.*.material_price' => 'nullable|numeric|min:0',
+            'items.*.labor_price' => 'nullable|numeric|min:0',
+            'items.*.equipment_price' => 'nullable|numeric|min:0',
+        ]);
+        
+        try {
+            DB::beginTransaction();
+            
+            $items = $request->input('items', []);
+            $subtotal_de_baza = 0;
+            foreach ($items as $item) {
+                $lineTotal = ($item['material_price'] ?? 0) + ($item['labor_price'] ?? 0) + ($item['equipment_price'] ?? 0);
+                $subtotal_de_baza += ($item['quantity'] ?? 0) * $lineTotal;
+            }
+
+            $offer->update([
+                'client_id' => $validatedData['client_id'],
+                'assigned_to_user_id' => $validatedData['assigned_to_user_id'],
+                'status' => $validatedData['status'],
+                'offer_number' => $validatedData['offer_number'],
+                'offer_date' => Carbon::parse($validatedData['offer_date']),
+                'notes' => $validatedData['notes'],
+                'total_value' => $subtotal_de_baza, // Salvăm MEREU subtotalul de bază
+            ]);
+
+            $offer->items()->delete();
+            foreach ($items as $itemData) {
+                 $lineTotalValue = ($itemData['material_price'] ?? 0) + ($itemData['labor_price'] ?? 0) + ($itemData['equipment_price'] ?? 0);
+                 $itemData['total'] = ($itemData['quantity'] ?? 0) * $lineTotalValue;
+                 $offer->items()->create($itemData);
+            }
+
+            DB::commit();
+            return redirect()->route('oferte.index')->with('success', 'Oferta a fost actualizată!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'A apărut o eroare: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Șterge o ofertă din baza de date.
+     */
+    public function destroy(Offer $oferte)
+    {
+        $offer = $oferte;
+        if ($offer->company_id !== Auth::user()->company_id) { abort(403); }
+        
+        // Ștergerea în cascadă este deja definită în migrație, dar o facem explicit pentru siguranță
+        $offer->items()->delete();
+        $offer->delete();
+        
+        return redirect()->route('oferte.index')->with('success', 'Oferta a fost ștearsă cu succes.');
+    }
+
+    /**
+     * Generează și descarcă PDF-ul pentru o ofertă.
+     */
     public function downloadPDF(Offer $oferte)
     {
-        // Securitate: verifică dacă oferta aparține utilizatorului
-        if ($oferte->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $offer = $oferte;
+        if ($offer->company_id !== Auth::user()->company_id) { abort(403); }
 
-        $oferte->load(['client', 'items']);
-        $companyProfile = Auth::user()->companyProfile;
-        $templateSettings = Auth::user()->templateSetting;
+        $offer->load(['client', 'items', 'assignedTo']);
+        
+        $company = Auth::user()->company;
+        $companyProfile = $company->companyProfile;
+        $templateSettings = $company->templateSetting;
+        $offerSettings = $company->offerSetting;
 
-        // Creează numele fișierului PDF
-        $pdfFileName = 'Oferta-' . str_replace('/', '-', $oferte->offer_number) . '.pdf';
+        $pdfFileName = 'Oferta-' . str_replace('/', '-', $offer->offer_number) . '.pdf';
         
-        // Generează PDF-ul folosind un view special pentru PDF
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('offers.pdf', compact('oferte', 'companyProfile', 'templateSettings'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('offers.pdf', compact('offer', 'companyProfile', 'templateSettings', 'offerSettings'));
         
-        // Descarcă fișierul în browser
         return $pdf->download($pdfFileName);
     }
 }

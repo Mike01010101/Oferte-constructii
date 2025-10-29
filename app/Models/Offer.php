@@ -9,9 +9,21 @@ class Offer extends Model
 {
     use HasFactory;
 
+    const STATUSES = [
+        'Draft' => 'Draft',
+        'Finala' => 'Finala',
+        'Trimisa' => 'Trimisa',
+        'Acceptata' => 'Acceptata',
+        'In lucru' => 'In lucru',
+        'Finalizata' => 'Finalizata',
+        'Facturata' => 'Facturata',
+        'Incasata' => 'Incasata',
+    ];
+
     protected $fillable = [
-        'user_id',
+        'company_id',
         'client_id',
+        'assigned_to_user_id',
         'offer_number',
         'offer_date',
         'status',
@@ -27,5 +39,9 @@ class Offer extends Model
     public function items()
     {
         return $this->hasMany(OfferItem::class);
+    }
+    public function assignedTo()
+    {
+        return $this->belongsTo(User::class, 'assigned_to_user_id');
     }
 }

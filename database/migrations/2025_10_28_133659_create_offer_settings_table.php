@@ -13,7 +13,7 @@ return new class extends Migration
 {
     Schema::create('offer_settings', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('user_id')->constrained()->onDelete('cascade');
+        $table->foreignId('company_id')->constrained()->onDelete('cascade');
         $table->string('prefix')->nullable()->comment('Ex: OFC-');
         $table->string('suffix')->nullable()->comment('Ex: /2024');
         $table->unsignedInteger('start_number')->default(1);

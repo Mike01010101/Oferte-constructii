@@ -13,7 +13,7 @@ class ClientController extends Controller
      */
     public function index()
     {
-        $clients = Auth::user()->clients()->latest()->paginate(15);
+        $clients = Auth::user()->company->clients()->latest()->paginate(15);
         return view('clients.index', compact('clients'));
     }
 
@@ -40,7 +40,7 @@ class ClientController extends Controller
             'phone' => 'nullable|string|max:50',
         ]);
 
-        Auth::user()->clients()->create($validatedData);
+        Auth::user()->company->clients()->create($validatedData);
 
         return redirect()->route('clienti.index')->with('success', 'Clientul a fost adăugat cu succes.');
     }
