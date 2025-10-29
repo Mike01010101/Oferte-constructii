@@ -7,51 +7,23 @@
         <a href="{{ route('oferte.create') }}" class="btn btn-primary">Adaugă ofertă nouă</a>
     </div>
 
+    <!-- Bara de căutare -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="search" class="form-control" id="search-input" name="search" placeholder="Caută instant după nr. ofertă, nume client, articole din ofertă..." value="{{ request('search') }}">
+            </div>
+        </div>
+    </div>
+
     @if (session('success')) <div class="alert alert-success">{{ session('success') }}</div> @endif
     
     <div class="card">
         <div class="card-body">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Nr. Ofertă</th>
-                        <th>Client</th>
-                        <th>Alocată lui</th>
-                        <th>Data</th>
-                        <th class="text-end">Valoare</th>
-                        <th>Status</th>
-                        <th class="text-center">Acțiuni</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($offers as $offer)
-                        <tr>
-                            <td><strong>{{ $offer->offer_number }}</strong></td>
-                            <td>{{ $offer->client->name }}</td>
-                            <td>{{ $offer->assignedTo->name ?? 'N/A' }}</td>
-                            <td>{{ \Carbon\Carbon::parse($offer->offer_date)->format('d.m.Y') }}</td>
-                            <td class="text-end">{{ number_format($offer->total_value, 2, ',', '.') }} RON</td>
-                            <td><span class="badge bg-secondary">{{ $offer->status }}</span></td>
-                            <td class="text-center">
-                                <a href="{{ route('oferte.show', $offer->id) }}" class="btn btn-sm btn-outline-info" title="Vezi"><i class="fa-solid fa-eye"></i></a>
-                                <a href="{{ route('oferte.edit', $offer->id) }}" class="btn btn-sm btn-outline-secondary" title="Editează"><i class="fa-solid fa-pencil"></i></a>
-                                <form action="{{ route('oferte.destroy', $offer->id) }}" method="POST" class="d-inline" id="delete-form-{{ $offer->id }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Șterge" 
-                                            data-bs-toggle="modal" data-bs-target="#deleteOfferModal" 
-                                            data-form-id="delete-form-{{ $offer->id }}">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="7" class="text-center">Nu aveți nicio ofertă creată.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-             <div class="mt-3">{{ $offers->links() }}</div>
+            <div id="offers-table-container">
+                @include('offers.partials.offers-table', ['offers' => $offers])
+            </div>
         </div>
     </div>
 </div>
@@ -91,6 +63,30 @@
             }
         });
     }
+        // Script pentru căutare live
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('search-input');
+        const tableContainer = document.getElementById('offers-table-container');
+        let debounceTimer;
+
+        searchInput.addEventListener('keyup', function () {
+            clearTimeout(debounceTimer);
+            
+            debounceTimer = setTimeout(() => {
+                const searchTerm = this.value;
+                const url = `{{ route('oferte.index') }}?search=${encodeURIComponent(searchTerm)}`;
+
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    tableContainer.innerHTML = html;
+                })
+                .catch(error => console.error('A apărut o eroare:', error));
+            }, 300);
+        });
+    });
 </script>
 @endpush
 @endsection

@@ -51,10 +51,16 @@
             </div>
         </div>
         
-        <div class="card mt-4">
+                <div class="card mt-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 Elemente ofertă
-                <button type="button" id="add-item-btn" class="btn btn-sm btn-success">Adaugă rând</button>
+                <div>
+                    <div class="form-check form-check-inline form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="price-mode-toggle">
+                        <label class="form-check-label" for="price-mode-toggle">Introdu prețuri totale</label>
+                    </div>
+                    <button type="button" id="add-item-btn" class="btn btn-sm btn-success">Adaugă poziție</button>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -64,23 +70,29 @@
                                 <th style="width: 30%;">Descriere</th>
                                 <th style="width: 8%;">U.M.</th>
                                 <th style="width: 8%;">Cant.</th>
-                                @if($settings->show_material_column) <th class="price-col">Material</th> @endif
-                                @if($settings->show_labor_column) <th class="price-col">Manoperă</th> @endif
-                                @if($settings->show_equipment_column) <th class="price-col">Utilaj</th> @endif
+                                @if($settings->show_material_column) <th class="price-col">Material <span class="price-mode-label">(unitar)</span></th> @endif
+                                @if($settings->show_labor_column) <th class="price-col">Manoperă <span class="price-mode-label">(unitar)</span></th> @endif
+                                @if($settings->show_equipment_column) <th class="price-col">Utilaj <span class="price-mode-label">(unitar)</span></th> @endif
                                 @if($settings->show_unit_price_column) <th class="price-col text-end">Preț Unitar</th> @endif
                                 <th class="price-col text-end">Total</th>
                                 <th style="width: 5%;"></th>
                             </tr>
                         </thead>
                         <tbody id="offer-items-tbody">
+                            {{-- Aici populăm rândurile existente cu noua structură --}}
                             @foreach (old('items', $offer->items->toArray()) as $index => $item)
                                 <tr class="offer-item-row">
-                                    <td><input type="text" name="items[{{ $index }}][description]" class="form-control form-control-sm" value="{{ $item['description'] }}" required></td>
-                                    <td><input type="number" name="items[{{ $index }}][quantity]" class="form-control form-control-sm quantity" step="0.01" value="{{ $item['quantity'] }}" required></td>
+                                    <td>
+                                        <input type="text" name="items[{{ $index }}][description]" class="form-control form-control-sm description-input" value="{{ $item['description'] }}" required>
+                                        <input type="hidden" name="items[{{ $index }}][material_price]" class="price-input-hidden material-price-hidden" value="{{ $item['material_price'] ?? '0.00' }}">
+                                        <input type="hidden" name="items[{{ $index }}][labor_price]" class="price-input-hidden labor-price-hidden" value="{{ $item['labor_price'] ?? '0.00' }}">
+                                        <input type="hidden" name="items[{{ $index }}][equipment_price]" class="price-input-hidden equipment-price-hidden" value="{{ $item['equipment_price'] ?? '0.00' }}">
+                                    </td>
                                     <td><input type="text" name="items[{{ $index }}][unit_measure]" class="form-control form-control-sm" value="{{ $item['unit_measure'] }}" required></td>
-                                    @if($settings->show_material_column) <td><input type="number" name="items[{{ $index }}][material_price]" class="form-control form-control-sm price-input material-price" step="0.01" value="{{ $item['material_price'] ?? '0.00' }}"></td> @endif
-                                    @if($settings->show_labor_column) <td><input type="number" name="items[{{ $index }}][labor_price]" class="form-control form-control-sm price-input labor-price" step="0.01" value="{{ $item['labor_price'] ?? '0.00' }}"></td> @endif
-                                    @if($settings->show_equipment_column) <td><input type="number" name="items[{{ $index }}][equipment_price]" class="form-control form-control-sm price-input equipment-price" step="0.01" value="{{ $item['equipment_price'] ?? '0.00' }}"></td> @endif
+                                    <td><input type="number" name="items[{{ $index }}][quantity]" class="form-control form-control-sm quantity" step="0.01" value="{{ $item['quantity'] }}" required></td>
+                                    @if($settings->show_material_column) <td><input type="number" class="form-control form-control-sm price-input-visible material-price-visible" step="0.01" value="{{ $item['material_price'] ?? '0.00' }}"></td> @endif
+                                    @if($settings->show_labor_column) <td><input type="number" class="form-control form-control-sm price-input-visible labor-price-visible" step="0.01" value="{{ $item['labor_price'] ?? '0.00' }}"></td> @endif
+                                    @if($settings->show_equipment_column) <td><input type="number" class="form-control form-control-sm price-input-visible equipment-price-visible" step="0.01" value="{{ $item['equipment_price'] ?? '0.00' }}"></td> @endif
                                     @if($settings->show_unit_price_column) <td class="text-end align-middle unit-price-total">0.00</td> @endif
                                     <td class="text-end align-middle line-total">0.00</td>
                                     <td><button type="button" class="btn btn-sm btn-danger remove-item-btn">X</button></td>
@@ -135,6 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return priceModeToggle.checked;
     }
 
+    
     function addRow() {
         const row = document.createElement('tr');
         row.classList.add('offer-item-row');
@@ -170,6 +183,37 @@ document.addEventListener('DOMContentLoaded', function () {
         row.querySelector('.description-input').focus();
         
         itemIndex++;
+    }
+
+    function togglePriceMode() {
+        const newLabel = isTotalMode() ? '(total)' : '(unitar)';
+        priceModeLabels.forEach(label => label.textContent = newLabel);
+        
+        // NOUA LOGICĂ: Recalculăm ce se afișează în input-uri la comutare
+        document.querySelectorAll('.offer-item-row').forEach(row => {
+            const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+            const unitMaterial = parseFloat(row.querySelector('.material-price-hidden').value) || 0;
+            const unitLabor = parseFloat(row.querySelector('.labor-price-hidden').value) || 0;
+            const unitEquipment = parseFloat(row.querySelector('.equipment-price-hidden').value) || 0;
+
+            const materialInput = row.querySelector('.material-price-visible');
+            const laborInput = row.querySelector('.labor-price-visible');
+            const equipmentInput = row.querySelector('.equipment-price-visible');
+
+            if (isTotalMode()) {
+                // Comutăm pe modul TOTAL: afișăm valoarea totală (unitar * cantitate)
+                if (materialInput) materialInput.value = (unitMaterial * qty).toFixed(2);
+                if (laborInput) laborInput.value = (unitLabor * qty).toFixed(2);
+                if (equipmentInput) equipmentInput.value = (unitEquipment * qty).toFixed(2);
+            } else {
+                // Comutăm pe modul UNITAR: afișăm valoarea unitară
+                if (materialInput) materialInput.value = unitMaterial.toFixed(2);
+                if (laborInput) laborInput.value = unitLabor.toFixed(2);
+                if (equipmentInput) equipmentInput.value = unitEquipment.toFixed(2);
+            }
+        });
+
+        updateCalculations();
     }
 
     function updateCalculations() {
@@ -212,11 +256,7 @@ document.addEventListener('DOMContentLoaded', function () {
         priceModeLabels.forEach(label => label.textContent = newLabel);
     }
 
-    priceModeToggle.addEventListener('change', function() {
-        updatePriceModeLabels();
-        document.querySelectorAll('.price-input-visible').forEach(input => input.value = '0.00');
-        updateCalculations();
-    });
+    priceModeToggle.addEventListener('change', togglePriceMode);
     
     function updateEventListenersForRow(row) {
         row.querySelector('.remove-item-btn').onclick = function() {

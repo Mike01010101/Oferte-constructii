@@ -190,6 +190,7 @@
         @endif
 
         <!-- Tabel Produse -->
+                <!-- Tabel Produse -->
         <table>
             <thead>
                 <tr>
@@ -197,9 +198,11 @@
                     <th>Descriere</th>
                     <th>U.M.</th>
                     <th>Cant.</th>
-                    @if($offerSettings->show_material_column) <th class="text-end">Material</th> @endif
-                    @if($offerSettings->show_labor_column) <th class="text-end">Manoperă</th> @endif
-                    @if($offerSettings->show_equipment_column) <th class="text-end">Utilaj</th> @endif
+                    {{-- Antetele se modifică dinamic --}}
+                    @if($offerSettings->show_material_column) <th class="text-end">Material @if($offerSettings->pdf_price_display_mode == 'total') (Total) @endif</th> @endif
+                    @if($offerSettings->show_labor_column) <th class="text-end">Manoperă @if($offerSettings->pdf_price_display_mode == 'total') (Total) @endif</th> @endif
+                    @if($offerSettings->show_equipment_column) <th class="text-end">Utilaj @if($offerSettings->pdf_price_display_mode == 'total') (Total) @endif</th> @endif
+                    
                     @if($offerSettings->show_unit_price_column) <th class="text-end">Preț Unitar</th> @endif
                     <th class="text-end">Total</th>
                 </tr>
@@ -212,15 +215,28 @@
                         $displayEqPrice = $item->equipment_price * $recapMultiplier;
                         $displayUnitPrice = $displayMatPrice + $displayLabPrice + $displayEqPrice;
                         $displayTotal = $item->quantity * $displayUnitPrice;
+
+                        $displayTotalMat = $displayMatPrice * $item->quantity;
+                        $displayTotalLab = $displayLabPrice * $item->quantity;
+                        $displayTotalEq = $displayEqPrice * $item->quantity;
                     @endphp
                     <tr>
                         <td class="text-center">{{ $loop->iteration }}</td>
                         <td>{!! nl2br(e($item->description)) !!}</td>
                         <td class="text-center">{{ $item->unit_measure }}</td>
                         <td class="text-center">{{ rtrim(rtrim(number_format($item->quantity, 2, ',', '.'), '0'), ',') }}</td>
-                        @if($offerSettings->show_material_column) <td class="text-end">{{ number_format($displayMatPrice, 2, ',', '.') }}</td> @endif
-                        @if($offerSettings->show_labor_column) <td class="text-end">{{ number_format($displayLabPrice, 2, ',', '.') }}</td> @endif
-                        @if($offerSettings->show_equipment_column) <td class="text-end">{{ number_format($displayEqPrice, 2, ',', '.') }}</td> @endif
+                        
+                        {{-- Aici este logica de afișare condiționată --}}
+                        @if($offerSettings->show_material_column)
+                            <td class="text-end">{{ number_format( $offerSettings->pdf_price_display_mode == 'total' ? $displayTotalMat : $displayMatPrice, 2, ',', '.') }}</td>
+                        @endif
+                        @if($offerSettings->show_labor_column)
+                            <td class="text-end">{{ number_format( $offerSettings->pdf_price_display_mode == 'total' ? $displayTotalLab : $displayLabPrice, 2, ',', '.') }}</td>
+                        @endif
+                        @if($offerSettings->show_equipment_column)
+                             <td class="text-end">{{ number_format( $offerSettings->pdf_price_display_mode == 'total' ? $displayTotalEq : $displayEqPrice, 2, ',', '.') }}</td>
+                        @endif
+
                         @if($offerSettings->show_unit_price_column) <td class="text-end">{{ number_format($displayUnitPrice, 2, ',', '.') }}</td> @endif
                         <td class="text-end">{{ number_format($displayTotal, 2, ',', '.') }}</td>
                     </tr>

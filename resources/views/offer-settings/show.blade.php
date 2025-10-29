@@ -87,9 +87,14 @@
                             <label class="form-check-label" for="show_equipment_column">Utilaj (RON)</label>
                         </div>
                          <hr>
-                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" id="show_unit_price_column" name="show_unit_price_column" value="1" {{ old('show_unit_price_column', $settings->show_unit_price_column ?? false) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="show_unit_price_column">Afișează și coloana "Preț unitar" (suma celor de mai sus)</label>
+                        <label class="form-label">Afișare prețuri în PDF</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="pdf_price_display_mode" id="mode_unit" value="unit" {{ (old('pdf_price_display_mode', $settings->pdf_price_display_mode ?? 'unit') == 'unit') ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mode_unit">Afișează prețuri unitare</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="pdf_price_display_mode" id="mode_total" value="total" {{ (old('pdf_price_display_mode', $settings->pdf_price_display_mode ?? 'unit') == 'total') ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mode_total">Afișează prețuri totale</label>
                         </div>
                     </div>
                 </div>

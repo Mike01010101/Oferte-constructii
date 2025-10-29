@@ -25,5 +25,6 @@ class OfferSetting extends Model
         'summary_indirect_percentage',
         'summary_profit_percentage',
         'include_summary_in_prices',
+        'pdf_price_display_mode'
     ];
 }

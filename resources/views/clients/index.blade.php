@@ -7,48 +7,96 @@
         <a href="{{ route('clienti.create') }}" class="btn btn-primary">Adaugă client nou</a>
     </div>
 
-    @if (session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
+    <!-- Bara de căutare -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="search" class="form-control" id="search-input" name="search" placeholder="Caută instant după nume, CUI, contact..." value="{{ request('search') }}">
+            </div>
         </div>
+    </div>
+
+    @if (session('success'))
+        <div class="alert alert-success"> {{ session('success') }} </div>
     @endif
 
     <div class="card">
         <div class="card-body">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Nume client</th>
-                        <th>CUI / CIF</th>
-                        <th>Persoană de contact</th>
-                        <th>Telefon</th>
-                        <th>Acțiuni</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($clients as $client)
-                        <tr>
-                            <td>{{ $client->name }}</td>
-                            <td>{{ $client->vat_number ?? '-' }}</td>
-                            <td>{{ $client->contact_person ?? '-' }}</td>
-                            <td>{{ $client->phone ?? '-' }}</td>
-                            <td>
-                                {{-- Aici vom adăuga butoane de Editare / Ștergere --}}
-                                <a href="#" class="btn btn-sm btn-secondary">Editează</a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center">Nu aveți niciun client adăugat.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-
-            <div class="mt-3">
-                {{ $clients->links() }}
+            <!-- Containerul unde se va încărca tabelul -->
+            <div id="clients-table-container">
+                @include('clients.partials.clients-table', ['clients' => $clients])
             </div>
         </div>
     </div>
 </div>
+
+<!-- Modal de Confirmare Ștergere -->
+<div class="modal fade" id="deleteClientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmare ștergere</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sunteți sigur că doriți să ștergeți acest client? Acțiunea este ireversibilă.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Da, șterge</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    const deleteModal = document.getElementById('deleteClientModal');
+    if (deleteModal) {
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        let formToSubmitId = null;
+
+        deleteModal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+            formToSubmitId = button.getAttribute('data-form-id');
+        });
+
+        confirmDeleteBtn.addEventListener('click', () => {
+            if (formToSubmitId) {
+                document.getElementById(formToSubmitId).submit();
+            }
+        });
+    }
+        // NOU: Scriptul pentru căutare live
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('search-input');
+        const tableContainer = document.getElementById('clients-table-container');
+        let debounceTimer;
+
+        searchInput.addEventListener('keyup', function () {
+            // Folosim un 'debounce' pentru a nu trimite cereri la fiecare tastă apăsată
+            clearTimeout(debounceTimer);
+            
+            debounceTimer = setTimeout(() => {
+                const searchTerm = this.value;
+                const url = `{{ route('clienti.index') }}?search=${encodeURIComponent(searchTerm)}`;
+
+                // Trimitem cererea AJAX
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Înlocuim conținutul containerului cu noul tabel
+                    tableContainer.innerHTML = html;
+                })
+                .catch(error => console.error('A apărut o eroare:', error));
+            }, 300); 
+        });
+    });
+</script>
+@endpush
 @endsection

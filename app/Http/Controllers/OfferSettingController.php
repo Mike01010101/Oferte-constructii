@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class OfferSettingController extends Controller
 {
@@ -32,6 +33,7 @@ class OfferSettingController extends Controller
             'summary_cam_percentage' => 'nullable|numeric|min:0',
             'summary_indirect_percentage' => 'nullable|numeric|min:0',
             'summary_profit_percentage' => 'nullable|numeric|min:0',
+            'pdf_price_display_mode' => ['required', Rule::in(['unit', 'total'])],
         ]);
 
         // Tratăm manual checkbox-urile: dacă nu sunt trimise, le setăm valoarea la 0 (false)
@@ -45,6 +47,7 @@ class OfferSettingController extends Controller
         $validatedData['show_equipment_column'] = $request->has('show_equipment_column');
         $validatedData['show_unit_price_column'] = $request->has('show_unit_price_column');
         $validatedData['show_summary_block'] = $request->has('show_summary_block');
+        
         
         $currentSettings = $company->offerSetting;
 

@@ -15,10 +15,34 @@ class OfferController extends Controller
     /**
      * Afișează lista de oferte.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Preluăm ofertele inclusiv relațiile 'client' și 'assignedTo' pentru a evita query-uri multiple
-        $offers = Auth::user()->company->offers()->with(['client', 'assignedTo'])->latest()->paginate(15);
+        $searchTerm = $request->input('search');
+
+        $offersQuery = Auth::user()->company->offers()
+            ->with(['client', 'assignedTo'])
+            ->when($searchTerm, function ($query, $searchTerm) {
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('offer_number', 'like', "%{$searchTerm}%")
+                      ->orWhere('status', 'like', "%{$searchTerm}%")
+                      // Căutare în relația cu clienții
+                      ->orWhereHas('client', function ($clientQuery) use ($searchTerm) {
+                          $clientQuery->where('name', 'like', "%{$searchTerm}%");
+                      })
+                      // NOU: Căutare în relația cu articolele din ofertă
+                      ->orWhereHas('items', function ($itemsQuery) use ($searchTerm) {
+                          $itemsQuery->where('description', 'like', "%{$searchTerm}%");
+                      });
+                });
+            })
+            ->latest();
+
+        $offers = $offersQuery->paginate(15)->appends($request->query());
+
+        if ($request->ajax()) {
+            return view('offers.partials.offers-table', compact('offers'))->render();
+        }
+
         return view('offers.index', compact('offers'));
     }
 
