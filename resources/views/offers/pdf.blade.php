@@ -302,7 +302,20 @@
                 </td>
             </tr>
         </table>
-        
+        <!-- NOU: Secțiune Semnătură și Ștampilă -->
+        @if ($templateSettings && $templateSettings->stamp_path)
+            <table class="border-0" style="margin-top: 40px;">
+                <tr>
+                    <td class="border-0" style="width: 60%;"></td>
+                    <td class="border-0 text-center" style="width: 40%;">
+                        <p>Ofertant,</p>
+                        <img src="{{ public_path('storage/' . $templateSettings->stamp_path) }}" 
+                             style="width: {{ $templateSettings->stamp_size }}px; height: auto; margin-top: 5px;">
+                    </td>
+                </tr>
+            </table>
+        @endif
+
         <!-- Subsol -->
         <footer>
             {!! nl2br(e($templateSettings->footer_text ?? '')) !!}

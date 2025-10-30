@@ -280,12 +280,10 @@ function handleOfferForm() {
 }
 
 
-// Funcția pentru creatorul de șabloane
 function handleTemplateCreator() {
     const previewContainer = document.getElementById('preview-page');
     if (!previewContainer) return;
 
-    // Cache pentru elementele de control și preview
     const controls = {
         layout: document.getElementById('layout'),
         title: document.getElementById('document_title'),
@@ -293,7 +291,10 @@ function handleTemplateCreator() {
         color: document.getElementById('accent_color'),
         tableStyle: document.getElementById('table_style'),
         footer: document.getElementById('footer_text'),
+        stamp: document.getElementById('stamp'),
+        stampSize: document.getElementById('stamp_size'),
     };
+    const stampSizeValue = document.getElementById('stamp_size_value');
 
     const preview = {
         page: previewContainer,
@@ -302,6 +303,7 @@ function handleTemplateCreator() {
         tableHead: document.getElementById('preview-table-head'),
         stripedRow: document.getElementById('preview-striped-row'),
         footer: document.getElementById('preview-footer'),
+        stamp: document.getElementById('preview-stamp'),
     };
 
     // --- Funcții Helper pentru generare HTML ---
@@ -414,6 +416,27 @@ function handleTemplateCreator() {
         else if (layout === 'compact') preview.headerContainer.innerHTML = getCompactHeader(color);
         else if (layout === 'elegant') preview.headerContainer.innerHTML = getElegantHeader(color);
         else if (layout === 'minimalist') preview.headerContainer.innerHTML = getMinimalistHeader(color);
+
+        const size = controls.stamp_size.value;
+        preview.stamp.style.width = size + 'px';
+        if (stampSizeValue) {
+            stampSizeValue.textContent = size + 'px';
+        }
+    }
+    // Listener pentru încărcarea instantanee a previzualizării ștampilei
+    if (controls.stamp && !controls.stamp.listenerAttached) {
+        controls.stamp.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.stamp.src = e.target.result;
+                    preview.stamp.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+        controls.stamp.listenerAttached = true;
     }
 
     // Attach event listeners
@@ -426,6 +449,107 @@ function handleTemplateCreator() {
 
     // Update inițial
     updatePreview();
+}
+
+function handleQuickStatusUpdate() {
+    const container = document.querySelector('#offers-table-container');
+    if (!container) return;
+
+    if (!container.listenerAttached) {
+        container.addEventListener('click', function(event) {
+            const target = event.target;
+            
+            if (target.classList.contains('update-status-btn')) {
+                event.preventDefault();
+
+                const offerId = target.dataset.offerId;
+                const newStatus = target.dataset.newStatus;
+                const url = target.dataset.url;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const statusCell = document.getElementById(`status-cell-${offerId}`);
+                        if (statusCell) {
+                            // Înlocuim DOAR link-ul, nu toată celula, pentru a păstra structura dropdown
+                            const dropdownToggle = statusCell.querySelector('.dropdown-toggle');
+                            if (dropdownToggle) {
+                                dropdownToggle.textContent = newStatus;
+                                // Ștergem clasele vechi de culoare și adăugăm cea nouă
+                                dropdownToggle.className = 'badge dropdown-toggle text-decoration-none ' + data.new_status_class;
+                            }
+                        }
+                        showToast(data.success, 'success');
+                    } else {
+                        showToast(data.error || 'A apărut o eroare.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Eroare:', error);
+                    showToast('Eroare de rețea.', 'error');
+                });
+             }
+        });
+        container.listenerAttached = true;
+    }
+}
+
+function handleQuickAssignUpdate() {
+    const container = document.querySelector('#offers-table-container');
+    if (!container) return;
+
+    if (!container.listenerAttachedAssign) { // Folosim un nume de proprietate diferit
+        container.addEventListener('click', function(event) {
+            const target = event.target;
+            
+            if (target.classList.contains('assign-user-btn')) {
+                event.preventDefault();
+
+                const offerId = target.dataset.offerId;
+                const userId = target.dataset.userId;
+                const url = target.dataset.url;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const assignCell = document.getElementById(`assign-cell-${offerId}`);
+                        if (assignCell) {
+                            const dropdownToggle = assignCell.querySelector('.dropdown-toggle');
+                            if(dropdownToggle) {
+                                dropdownToggle.textContent = data.assigned_user_name;
+                            }
+                        }
+                        showToast(data.success, 'success');
+                    } else {
+                        showToast(data.error || 'A apărut o eroare.', 'error');
+                    }
+                })
+                .catch(error => { console.error('Eroare:', error);
+                    showToast('Eroare de rețea.', 'error');});
+            }
+        });
+        container.listenerAttachedAssign = true;
+    }
 }
 
 // NOUA Versiune pentru a afișa notificarea de succes
@@ -611,6 +735,8 @@ function initPage() {
     handleErrorToast();
     handleNumberingModeToggle();
     handleCuiApiSearch();
+    handleQuickStatusUpdate();
+     handleQuickAssignUpdate();
 
     // Inițializăm toate modalele
     handleDeleteModal('deleteClientModal', 'confirmDeleteBtnClient', 'data-form-id');

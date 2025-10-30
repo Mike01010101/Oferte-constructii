@@ -8,7 +8,12 @@
         <h1 class="h3 mb-0">Detalii ofertă: {{ $offer->offer_number }}</h1>
         <div>
             <a href="{{ route('oferte.index') }}" class="btn btn-secondary">Înapoi la listă</a>
-            <a href="{{ route('oferte.pdf', $offer->id) }}" class="btn btn-primary" target="_blank" data-swup-ignore>Descarcă PDF</a>
+            <a href="{{ route('oferte.edit', $offer->id) }}" class="btn btn-info">
+                <i class="fa-solid fa-pencil me-1"></i> Editează
+            </a>
+            <a href="{{ route('oferte.pdf', $offer->id) }}" class="btn btn-primary" target="_blank" data-swup-ignore>
+                 <i class="fa-solid fa-file-pdf me-1"></i> Descarcă PDF
+            </a>
         </div>
     </div>
 
@@ -128,6 +133,18 @@
                     @endif
                 </div>
             </section>
+            <!-- NOU: Secțiune Semnătură și Ștampilă (pentru previzualizare) -->
+            @if ($templateSettings && $templateSettings->stamp_path)
+                <section class="row mt-5">
+                    <div class="col-md-6"></div>
+                    <div class="col-md-6 text-center">
+                        <p>Ofertant,</p>
+                        <img src="{{ asset('storage/' . $templateSettings->stamp_path) }}" 
+                             style="width: {{ $templateSettings->stamp_size }}px; height: auto; margin-top: 5px;"
+                             alt="Stampila">
+                    </div>
+                </section>
+            @endif
         </div>
     </div>
 </div>

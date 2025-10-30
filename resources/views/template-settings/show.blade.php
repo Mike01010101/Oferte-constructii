@@ -6,15 +6,15 @@
 <div class="container-fluid">
     <h1 class="h3 mb-4">Creator șabloane ofertă</h1>
 
-    <form method="POST" action="{{ route('template.update') }}">
+    {{-- Folosim enctype pentru a permite încărcarea de fișiere --}}
+    <form method="POST" action="{{ route('template.update') }}" enctype="multipart/form-data">
         @csrf
         <div class="row">
             <!-- Coloana cu setări -->
             <div class="col-lg-4">
+                {{-- Card Layout General --}}
                 <div class="card mb-4">
-                    <div class="card-header">
-                        <i class="fa-solid fa-layer-group me-2"></i> Layout General
-                    </div>
+                    <div class="card-header"><i class="fa-solid fa-layer-group me-2"></i> Layout General</div>
                     <div class="card-body">
                         <select name="layout" id="layout" class="form-select">
                             <option value="classic" {{ (old('layout', $settings->layout ?? 'classic') == 'classic') ? 'selected' : '' }}>Clasic</option>
@@ -26,10 +26,9 @@
                     </div>
                 </div>
 
+                {{-- Card Stil Vizual --}}
                 <div class="card mb-4">
-                    <div class="card-header">
-                        <i class="fa-solid fa-palette me-2"></i> Stil Vizual
-                    </div>
+                    <div class="card-header"><i class="fa-solid fa-palette me-2"></i> Stil Vizual</div>
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="document_title" class="form-label small">Titlu Document</label>
@@ -53,10 +52,9 @@
                     </div>
                 </div>
 
+                {{-- Card Tabel Produse --}}
                 <div class="card mb-4">
-                    <div class="card-header">
-                        <i class="fa-solid fa-table me-2"></i> Tabel Produse
-                    </div>
+                    <div class="card-header"><i class="fa-solid fa-table me-2"></i> Tabel Produse</div>
                     <div class="card-body">
                         <select name="table_style" id="table_style" class="form-select">
                            <option value="grid" {{ (old('table_style', $settings->table_style ?? 'grid') == 'grid') ? 'selected' : '' }}>Cu toate bordurile</option>
@@ -65,10 +63,33 @@
                     </div>
                 </div>
 
+                {{-- NOU: Card Ștampilă --}}
                 <div class="card mb-4">
-                    <div class="card-header">
-                        <i class="fa-solid fa-file-alt me-2"></i> Subsol
+                    <div class="card-header"><i class="fa-solid fa-stamp me-2"></i> Ștampilă și Semnătură</div>
+                    <div class="card-body">
+                        <label for="stamp" class="form-label small">Încarcă imagine ștampilă (PNG transparent)</label>
+                        <input class="form-control" type="file" id="stamp" name="stamp" accept="image/png">
+                        
+                        @if ($settings && $settings->stamp_path)
+                        <div class="mt-2 text-center">
+                            <p class="small text-muted mb-1">Ștampila curentă:</p>
+                            <img src="{{ asset('storage/' . $settings->stamp_path) }}" class="img-thumbnail" style="max-height: 70px; background: #eee;">
+                        </div>
+                        @endif
+
+                        <div class="mt-3">
+                            <label for="stamp_size" class="form-label small">Mărime ștampilă în PDF</label>
+                            <div class="d-flex align-items-center">
+                                <input type="range" class="form-range" id="stamp_size" name="stamp_size" min="50" max="300" value="{{ old('stamp_size', $settings->stamp_size ?? 150) }}">
+                                <span id="stamp_size_value" class="ms-3 fw-bold text-muted">{{ old('stamp_size', $settings->stamp_size ?? 150) }}px</span>
+                            </div>
+                        </div>
                     </div>
+                </div>
+
+                {{-- Card Subsol --}}
+                <div class="card mb-4">
+                    <div class="card-header"><i class="fa-solid fa-file-alt me-2"></i> Subsol</div>
                     <div class="card-body">
                         <label for="footer_text" class="form-label small">Text subsol (Termeni și condiții)</label>
                         <textarea class="form-control" id="footer_text" name="footer_text" rows="4">{{ old('footer_text', $settings->footer_text ?? '') }}</textarea>
@@ -80,27 +101,22 @@
                 </div>
             </div>
 
-            <!-- Coloana cu previzualizare -->
+            {{-- Coloana cu previzualizare --}}
             <div class="col-lg-8">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         Previzualizare Live
                         <small class="text-muted">Simulare format A4</small>
                     </div>
-                    {{-- Am eliminat bg-light și am setat fundalul să respecte tema --}}
                     <div class="card-body" style="background-color: var(--main-bg);">
-                        {{-- Am făcut fundalul și umbra adaptabile la temă --}}
-                        <div id="preview-page" style="width: 210mm; height: 297mm; background-color: var(--element-bg); margin: auto; box-shadow: 0 0 15px var(--shadow-color); padding: 15mm; position: relative;">
+                        <div id="preview-page" style="width: 210mm; height: 297mm; background-color: var(--element-bg); color: var(--text-primary); margin: auto; box-shadow: 0 0 15px var(--shadow-color); padding: 15mm; position: relative;">
                             
-                            <!-- Aici vom injecta dinamic header-ul -->
                             <div id="preview-header-container"></div>
                             
-                            <!-- Informații Client (statice) -->
                             <div class="mb-4">
                                 <p style="font-size: 10px;"><strong>Către:</strong><br>NUME CLIENT EXEMPLU SRL<br>Adresa clientului, Nr. 1, Oraș, Județ</p>
                             </div>
 
-                            <!-- Tabel (static) -->
                             <table id="preview-table" class="table table-sm" style="font-size: 10px;">
                                 <thead id="preview-table-head">
                                     <tr><th>Nr.</th><th>Descriere</th><th>Cant.</th><th class="text-end">Preț</th><th class="text-end">Total</th></tr>
@@ -111,8 +127,12 @@
                                 </tbody>
                             </table>
                             
-                             <!-- Footer -->
-                             <div id="preview-footer" class="text-muted" style="font-size: 8px; position: absolute; bottom: 15mm; left: 15mm; right: 15mm; border-top: 1px solid #ccc; padding-top: 5px;">
+                            <div id="preview-signature" style="position: absolute; bottom: 60mm; right: 15mm; text-align: center;">
+                                <p style="font-size: 10px;">Ofertant,</p>
+                                <img id="preview-stamp" src="{{ $settings && $settings->stamp_path ? asset('storage/' . $settings->stamp_path) : '' }}" style="display: {{ $settings && $settings->stamp_path ? 'block' : 'none' }}; width: 150px; height: auto; margin-top: 5px;">
+                            </div>
+
+                             <div id="preview-footer" class="text-muted" style="font-size: 8px; position: absolute; bottom: 15mm; left: 15mm; right: 15mm; border-top: 1px solid var(--border-color); padding-top: 5px;">
                                 Termenii și condițiile vor apărea aici.
                              </div>
                         </div>

@@ -53,4 +53,27 @@ class Offer extends Model
     {
         return $this->belongsTo(Company::class);
     }
+    public function getStatusColorClass(): string
+    {
+        return match ($this->status) {
+            'Acceptata', 'Incasata', 'Facturata', 'Finalizata' => 'text-bg-success',
+            'Trimisa', 'In lucru' => 'text-bg-info',
+            'Draft' => 'text-bg-secondary',
+            'Anulata', 'Respinsa' => 'text-bg-danger',
+            default => 'text-bg-light',
+        };
+    }
+    /**
+     * NOU: Returnează doar numele culorii Bootstrap bazată pe status.
+     */
+    public static function getColorNameForStatus(string $status): string
+    {
+        return match ($status) {
+            'Acceptata', 'Incasata', 'Facturata', 'Finalizata' => 'success',
+            'Trimisa', 'In lucru' => 'info',
+            'Draft' => 'secondary',
+            'Anulata', 'Respinsa' => 'danger',
+            default => 'light',
+        };
+    }
 }

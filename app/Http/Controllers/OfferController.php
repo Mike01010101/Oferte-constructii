@@ -39,11 +39,16 @@ class OfferController extends Controller
 
         $offers = $offersQuery->paginate(15)->appends($request->query());
 
+        // NOU: Definim variabila $users care lipsea
+        $users = Auth::user()->company->users()->orderBy('name')->get();
+
         if ($request->ajax()) {
-            return view('offers.partials.offers-table', compact('offers'))->render();
+            // Trimitem și utilizatorii la cererile AJAX, pentru ca dropdown-ul
+            // să funcționeze și după căutarea live
+            return view('offers.partials.offers-table', compact('offers', 'users'))->render();
         }
 
-        return view('offers.index', compact('offers'));
+        return view('offers.index', compact('offers', 'users'));
     }
 
     /**
@@ -126,6 +131,29 @@ class OfferController extends Controller
     }
     
     /**
+     * NOU: Actualizează rapid statusul unei oferte din lista principală.
+     */
+    public function updateStatus(Request $request, Offer $offer)
+    {
+        // Securitate: Verificăm dacă oferta aparține companiei utilizatorului
+        if ($offer->company_id !== Auth::user()->company_id) {
+            return response()->json(['error' => 'Neautorizat'], 403);
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(array_keys(Offer::STATUSES))],
+        ]);
+
+        $offer->update(['status' => $validated['status']]);
+
+        // Returnăm un răspuns JSON pentru a confirma succesul
+        return response()->json([
+            'success' => 'Statusul a fost actualizat!',
+            'new_status_class' => $offer->getStatusColorClass()
+        ]);
+    }
+
+    /**
      * Afișează formularul de editare pentru o ofertă existentă.
      */
     public function edit(Offer $oferte)
@@ -201,6 +229,29 @@ class OfferController extends Controller
         }
     }
 
+    /**
+     * NOU: Alocă o ofertă unui utilizator.
+     */
+    public function assignUser(Request $request, Offer $offer)
+    {
+        if ($offer->company_id !== Auth::user()->company_id) {
+            return response()->json(['error' => 'Neautorizat'], 403);
+        }
+
+        $validated = $request->validate([
+            'user_id' => 'nullable|exists:users,id',
+        ]);
+
+        $offer->update(['assigned_to_user_id' => $validated['user_id']]);
+
+        // Încărcăm numele noului utilizator pentru a-l trimite înapoi
+        $assignedUserName = $offer->assignedTo ? $offer->assignedTo->name : 'N/A';
+
+        return response()->json([
+            'success' => 'Oferta a fost alocată!',
+            'assigned_user_name' => $assignedUserName
+        ]);
+    }
     /**
      * Șterge o ofertă din baza de date.
      */

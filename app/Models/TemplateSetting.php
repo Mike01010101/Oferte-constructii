@@ -17,5 +17,7 @@ class TemplateSetting extends Model
     'accent_color',
     'table_style',
     'footer_text',
+    'stamp_path',
+    'stamp_size',
 ];
 }

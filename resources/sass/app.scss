@@ -317,7 +317,12 @@ html.is-leaving .transition-fade {
     color: var(--text-secondary); /* Asigură vizibilitatea etichetelor */
     font-weight: 500;
 }
+/* Suprascriere pentru textul 'muted'
+-------------------------------------------------- */
 
+.text-muted {
+    color: var(--text-tertiary) !important;
+}
 // Link-uri (inclusiv "Am uitat parola")
 .btn-link {
     color: var(--primary-accent);
@@ -393,4 +398,10 @@ html[data-theme='dark'] {
 -------------------------------------------------- */
 .toast-container {
     z-index: 1100; // Asigură că este deasupra oricărui alt element
+}
+// Stiluri pentru List Group în Dark Mode
+.list-group-item {
+    background-color: transparent;
+    border-color: var(--border-color);
+    color: var(--text-primary);
 }
