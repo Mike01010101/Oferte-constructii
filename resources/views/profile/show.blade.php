@@ -4,12 +4,6 @@
 <div class="container-fluid">
     <h1 class="h3 mb-4">Profilul firmei</h1>
 
-    @if (session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <div class="card">
         <div class="card-header">Datele companiei</div>
         <div class="card-body">
