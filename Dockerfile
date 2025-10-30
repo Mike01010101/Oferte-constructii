@@ -59,6 +59,8 @@ COPY --from=builder /var/www/config ./config
 COPY --from=builder /var/www/database ./database
 COPY --from=builder /var/www/routes ./routes
 COPY --from=builder /var/www/artisan .
+COPY --from=builder /var/www/composer.json .
+COPY --from=builder /var/www/composer.lock .
 
 # Creăm link-ul simbolic ÎNAINTE de a seta permisiunile
 RUN php artisan storage:link
