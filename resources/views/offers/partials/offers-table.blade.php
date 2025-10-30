@@ -20,19 +20,19 @@
                             <td class="text-end">{{ number_format($offer->total_value, 2, ',', '.') }} RON</td>
                             <td><span class="badge bg-secondary">{{ $offer->status }}</span></td>
                             <td class="text-center">
-                                <a href="{{ route('oferte.show', $offer->id) }}" class="btn btn-sm btn-outline-info" title="Vezi"><i class="fa-solid fa-eye"></i></a>
-                                <a href="{{ route('oferte.edit', $offer->id) }}" class="btn btn-sm btn-outline-secondary" title="Editează"><i class="fa-solid fa-pencil"></i></a>
-                                <a href="{{ route('oferte.pdf', $offer->id) }}" class="btn btn-sm btn-outline-danger" title="Descarcă PDF" target="_blank">
-                                    <i class="fa-solid fa-file-pdf"></i>
+                                <a href="{{ route('oferte.show', $offer->id) }}" class="btn btn-sm btn-secondary" title="Vezi"><i class="fa-solid fa-eye"></i></a>
+                                <a href="{{ route('oferte.edit', $offer->id) }}" class="btn btn-sm btn-secondary" title="Editează"><i class="fa-solid fa-pencil"></i></a>
+                                <a href="{{ route('oferte.pdf', $offer->id) }}" class="btn btn-sm btn-secondary" title="Descarcă PDF" target="_blank" data-swup-ignore>
+                                    <i class="fa-solid fa-file-pdf text-danger"></i>
                                 </a>
-                                <form action="{{ route('oferte.destroy', $offer->id) }}" method="POST" class="d-inline" id="delete-form-{{ $offer->id }}">
+                                <button type="button" class="btn btn-sm btn-secondary" title="Șterge" 
+                                        data-bs-toggle="modal" data-bs-target="#deleteOfferModal" 
+                                        data-form-id="delete-form-{{ $offer->id }}">
+                                    <i class="fa-solid fa-trash-can text-danger"></i>
+                                </button>
+                                <form action="{{ route('oferte.destroy', $offer->id) }}" method="POST" class="d-none" id="delete-form-{{ $offer->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Șterge" 
-                                            data-bs-toggle="modal" data-bs-target="#deleteOfferModal" 
-                                            data-form-id="delete-form-{{ $offer->id }}">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
                                 </form>
                             </td>
                         </tr>

@@ -6,3 +6,381 @@
 
 // Bootstrap
 @import 'bootstrap/scss/bootstrap';
+
+/* Stiluri personalizate pentru noul design
+-------------------------------------------------- */
+
+// Variabile de culori și tranziții
+:root {
+    --ease-in-out-quint: cubic-bezier(0.86, 0, 0.07, 1);
+    --transition-fast: 0.2s var(--ease-in-out-quint);
+    --transition-medium: 0.3s var(--ease-in-out-quint);
+    --sidebar-width: 260px;
+
+    // Light Theme
+    --primary-accent: #007aff;
+    --primary-accent-hover: #005ecb;
+    --sidebar-bg: #ffffff;
+    --main-bg: #f5f5f7;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-tertiary: #a1a1a6;
+    --border-color: #d2d2d7;
+    --element-bg: #ffffff;
+    --element-bg-hover: #ebebec;
+    --shadow-color: rgba(0, 0, 0, 0.05);
+}
+
+// Dark Theme
+html[data-theme='dark'] {
+    --primary-accent: #0a84ff;
+    --primary-accent-hover: #3b9eff;
+    --sidebar-bg: #1d1d1f;
+    --main-bg: #000000;
+    --text-primary: #f5f5f7;
+    --text-secondary: #86868b;
+    --text-tertiary: #636366;
+    --border-color: #3a3a3c;
+    --element-bg: #1d1d1f;
+    --element-bg-hover: #2c2c2e;
+    --shadow-color: rgba(255, 255, 255, 0.05);
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--main-bg);
+    color: var(--text-primary);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+#app {
+    display: flex;
+    min-height: 100vh;
+}
+.guest-layout {
+    display: block;
+}
+
+/* ------ Sidebar ------ */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1030;
+    transform: translateX(calc(-1 * var(--sidebar-width)));
+    transition: transform var(--transition-medium), background-color var(--transition-fast);
+}
+
+.sidebar-header {
+    padding: 1.5rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: border-color var(--transition-fast);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: color var(--transition-fast);
+}
+
+.sidebar-nav {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1rem 0;
+}
+
+.sidebar-nav .nav-link {
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+    padding: 0.8rem 1.5rem;
+    margin: 0.1rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.sidebar-nav .nav-link i {
+    width: 24px;
+    text-align: center;
+    margin-right: 1rem;
+    font-size: 0.95rem;
+}
+
+.sidebar-nav .nav-link:hover {
+    background-color: var(--element-bg-hover);
+    color: var(--text-primary);
+}
+
+.sidebar-nav .nav-link.active {
+    background-color: var(--primary-accent);
+    color: #fff;
+}
+
+.nav-section-header {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    padding: 1.5rem 1.5rem 0.5rem;
+    transition: color var(--transition-fast);
+}
+
+.sidebar-footer {
+    padding: 1.25rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: border-color var(--transition-fast);
+}
+
+/* ------ Theme Switcher ------ */
+.theme-switcher-wrapper {
+    flex-grow: 1;
+}
+
+.theme-switcher {
+    background: var(--element-bg-hover);
+    border: none;
+    padding: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.theme-switcher:hover {
+    color: var(--text-primary);
+}
+
+.theme-icon-dark { display: none; }
+.theme-icon-light { display: block; }
+html[data-theme='dark'] .theme-icon-dark { display: block; }
+html[data-theme='dark'] .theme-icon-light { display: none; }
+
+
+/* ------ Main Content ------ */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding-left: 0; // Se va schimba pe desktop
+    transition: padding-left var(--transition-medium);
+}
+
+.main-header {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--element-bg);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+.main-header .btn {
+    color: var(--text-secondary);
+}
+.header-title {
+    font-weight: 600;
+    margin-left: 1rem;
+}
+
+.content-wrapper {
+    padding: 2rem;
+}
+
+/* ------ Stare Meniu Deschis pe Mobil ------ */
+body.sidebar-open .sidebar {
+    transform: translateX(0);
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1029;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-medium), visibility var(--transition-medium);
+}
+
+body.sidebar-open .sidebar-overlay {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+/* ------ Responsive (Desktop View) ------ */
+@media (min-width: 992px) {
+    #app {
+        flex-direction: row;
+    }
+    
+    .sidebar {
+        position: static; /* Revenim la pozitionare statica in flux */
+        transform: translateX(0);
+        flex-shrink: 0; /* Impiedica micsorarea meniului */
+    }
+
+    .main-content {
+        width: calc(100% - var(--sidebar-width));
+        padding-left: 0; /* Nu mai avem nevoie de padding */
+    }
+
+    .main-header {
+        display: none; /* Ascundem header-ul de mobil pe desktop */
+    }
+
+    .sidebar-overlay {
+        display: none; /* Nu avem nevoie de overlay pe desktop */
+    }
+}
+/* Stiluri pentru tranzițiile între pagini (Swup)
+-------------------------------------------------- */
+
+.transition-fade {
+    transition: opacity 0.3s var(--ease-in-out-quint), transform 0.3s var(--ease-in-out-quint);
+    opacity: 1;
+    transform: translateY(0);
+}
+
+html.is-animating .transition-fade {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+html.is-leaving .transition-fade {
+    opacity: 0;
+    transform: translateY(0);
+}
+/* Suprascrieri pentru compatibilitate Light/Dark Mode
+-------------------------------------------------- */
+
+// Carduri
+.card {
+    background-color: var(--element-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+    color: var(--text-primary); /* Forțează textul din card să fie vizibil */
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.card-header, .card-footer {
+    background-color: transparent;
+    border-bottom: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-color);
+    color: var(--text-primary); /* Forțează și textul din header să fie vizibil */
+    transition: border-color var(--transition-fast);
+}
+
+// Formulare
+.form-control, .form-select, .input-group-text {
+    background-color: var(--element-bg);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--element-bg);
+    border-color: var(--primary-accent);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.25);
+}
+
+.form-control::placeholder {
+    color: var(--text-tertiary);
+}
+
+.form-label, .form-check-label {
+    color: var(--text-secondary); /* Asigură vizibilitatea etichetelor */
+    font-weight: 500;
+}
+
+// Link-uri (inclusiv "Am uitat parola")
+.btn-link {
+    color: var(--primary-accent);
+    text-decoration: none;
+}
+.btn-link:hover {
+    color: var(--primary-accent-hover);
+}
+
+// Tabele
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--border-color);
+    --bs-table-color: var(--text-primary);
+    --bs-table-hover-bg: var(--element-bg-hover);
+    --bs-table-hover-color: var(--text-primary);
+}
+
+// Alerte
+.alert-success {
+    --bs-alert-bg: rgba(26, 179, 111, 0.1);
+    --bs-alert-color: #1ab36f;
+    --bs-alert-border-color: rgba(26, 179, 111, 0.2);
+}
+
+// Modale
+.modal-content {
+    background-color: var(--element-bg);
+    border-color: var(--border-color);
+}
+.modal-header, .modal-footer {
+    border-color: var(--border-color);
+}
+.btn-close {
+    filter: invert(var(--is-dark, 0));
+}
+html[data-theme='dark'] {
+    --is-dark: 1;
+}
+
+// Butoane
+.btn-secondary {
+    background-color: var(--element-bg-hover);
+    border-color: var(--element-bg-hover);
+    color: var(--text-secondary);
+}
+.btn-secondary:hover {
+    background-color: var(--border-color);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+.btn-outline-secondary, .btn-outline-danger {
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+.btn-outline-secondary:hover, .btn-outline-danger:hover {
+    background-color: var(--element-bg-hover);
+}
+.btn-outline-danger {
+    color: #dc3545;
+}
+// Stiluri pentru Badges
+.badge {
+    --bs-badge-color: var(--text-secondary);
+    --bs-badge-bg: var(--element-bg-hover);
+}

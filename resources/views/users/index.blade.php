@@ -30,31 +30,27 @@
                             <td>
                                 @if(!empty($user->getRoleNames()))
                                     @foreach($user->getRoleNames() as $roleName)
-                                        <span class="badge bg-info">{{ $roleName }}</span>
+                                        <span class="badge">{{ $roleName }}</span>
                                     @endforeach
                                 @endif
                             </td>
                             <td>
-                                    @unless ($user->hasRole('Owner'))
-                                        <a href="{{ route('utilizatori.edit', $user->id) }}" class="btn btn-sm btn-secondary">Editează</a>
-                                        
-                                        <!-- Formularul de ștergere, acum cu un ID unic -->
-                                        <form action="{{ route('utilizatori.destroy', $user->id) }}" method="POST" class="d-inline" id="delete-form-{{ $user->id }}">
-                                            @csrf
-                                            @method('DELETE')
-                                            
-                                            <!-- Butonul care deschide modalul -->
-                                            <button type="button" class="btn btn-sm btn-danger" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#deleteUserModal" 
-                                                    data-form-id="delete-form-{{ $user->id }}">
-                                                Șterge
-                                            </button>
-                                        </form>
-                                    @else
-                                        <span class="text-muted fst-italic">N/A</span>
-                                    @endunless
-                                </td>
+                                @unless ($user->hasRole('Owner'))
+                                    <a href="{{ route('utilizatori.edit', $user->id) }}" class="btn btn-sm btn-secondary" title="Editează"><i class="fa-solid fa-pencil"></i></a>
+                                    <button type="button" class="btn btn-sm btn-secondary" title="Șterge"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteUserModal" 
+                                            data-form-id="delete-form-{{ $user->id }}">
+                                        <i class="fa-solid fa-trash-can text-danger"></i>
+                                    </button>
+                                    <form action="{{ route('utilizatori.destroy', $user->id) }}" method="POST" class="d-none" id="delete-form-{{ $user->id }}">
+                                        @csrf
+                                        @method('DELETE')
+                                    </form>
+                                @else
+                                    <span class="text-muted fst-italic">N/A</span>
+                                @endunless
+                            </td>
                         </tr>
                     @empty
                         <tr>

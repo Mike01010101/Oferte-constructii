@@ -25,6 +25,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('oferte', App\Http\Controllers\OfferController::class);
     Route::get('/oferte/{oferte}/pdf', [App\Http\Controllers\OfferController::class, 'downloadPDF'])->name('oferte.pdf');
 
+    Route::get('/rapoarte', [App\Http\Controllers\ReportController::class, 'index'])->name('rapoarte.index');
+    
     // Grup pentru managementul firmei, accesibil doar de Owner și Administrator
     Route::middleware(['role:Owner|Administrator'])->group(function () {
         Route::resource('utilizatori', App\Http\Controllers\UserController::class);

@@ -17,17 +17,18 @@
                                 <td>{{ $client->contact_person ?? '-' }}</td>
                                 <td>{{ $client->phone ?? '-' }}</td>
                                 <td class="text-center">
-                                    <a href="{{ route('clienti.edit', $client->id) }}" class="btn btn-sm btn-outline-secondary" title="Editează">
+                                    <a href="{{ route('clienti.edit', $client->id) }}" class="btn btn-sm btn-secondary" title="Editează">
                                         <i class="fa-solid fa-pencil"></i>
                                     </a>
-                                    <form action="{{ route('clienti.destroy', $client->id) }}" method="POST" class="d-inline" id="delete-form-{{ $client->id }}">
+                                    <button type="button" class="btn btn-sm btn-secondary" title="Șterge" 
+                                            data-bs-toggle="modal" data-bs-target="#deleteClientModal" 
+                                            data-form-id="delete-form-{{ $client->id }}">
+                                        <i class="fa-solid fa-trash-can text-danger"></i>
+                                    </button>
+                                    {{-- Am scos formularul in afara butoanelor pentru claritate --}}
+                                    <form action="{{ route('clienti.destroy', $client->id) }}" method="POST" class="d-none" id="delete-form-{{ $client->id }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Șterge" 
-                                                data-bs-toggle="modal" data-bs-target="#deleteClientModal" 
-                                                data-form-id="delete-form-{{ $client->id }}">
-                                            <i class="fa-solid fa-trash-can"></i>
-                                        </button>
                                     </form>
                                 </td>
                             </tr>
