@@ -1,5 +1,6 @@
 import './bootstrap';
 import Swup from 'swup';
+import { Toast } from 'bootstrap';
 
 // --- GESTIONARE EVENIMENTE GLOBALE ---
 document.addEventListener('click', function(event) {
@@ -50,29 +51,30 @@ function handleClientSearch() {
     });
 }
 
-function handleDeleteModal(modalId, formIdAttribute) {
+function handleDeleteModal(modalId, confirmBtnId, formIdAttribute) {
     const deleteModal = document.getElementById(modalId);
     if (!deleteModal) return;
 
-    const confirmDeleteBtn = deleteModal.querySelector('#confirmDeleteBtn');
+    const confirmDeleteBtn = document.getElementById(confirmBtnId);
     let formToSubmitId = null;
 
-    // Folosim o variabilă pentru a ne asigura că listener-ul este atașat o singură dată
     if (!deleteModal.listenerAttached) {
         deleteModal.addEventListener('show.bs.modal', event => {
             const button = event.relatedTarget;
             formToSubmitId = button.getAttribute(formIdAttribute);
         });
-
-        if (confirmDeleteBtn) {
-            confirmDeleteBtn.addEventListener('click', () => {
-                if (formToSubmitId) {
-                    const form = document.getElementById(formToSubmitId);
-                    if (form) form.submit();
-                }
-            });
-        }
         deleteModal.listenerAttached = true;
+    }
+
+    // Atașăm listener-ul de click în afara verificării, pentru a funcționa corect cu Swup
+    if (confirmDeleteBtn && !confirmDeleteBtn.listenerAttached) {
+        confirmDeleteBtn.addEventListener('click', () => {
+            if (formToSubmitId) {
+                const form = document.getElementById(formToSubmitId);
+                if (form) form.submit();
+            }
+        });
+        confirmDeleteBtn.listenerAttached = true;
     }
 }
 
@@ -120,10 +122,10 @@ function handleOfferSettingsToggles() {
 }
 
 function handleOfferForm() {
-    // ... tot codul pentru handleOfferForm rămâne neschimbat aici ...
     const tbody = document.getElementById('offer-items-tbody');
     if (!tbody) return;
 
+    // NOU: Citim setările direct din atributele data-* ale tbody
     const settings = {
         showMaterial: tbody.dataset.showMaterial === 'true',
         showLabor: tbody.dataset.showLabor === 'true',
@@ -141,27 +143,47 @@ function handleOfferForm() {
     const addRow = () => {
         const row = document.createElement('tr');
         row.classList.add('offer-item-row');
-        let priceCells = '';
-        if (settings.showMaterial) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible material-price-visible" step="0.01" value="0.00"></td>`;
-        if (settings.showLabor) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible labor-price-visible" step="0.01" value="0.00"></td>`;
-        if (settings.showEquipment) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible equipment-price-visible" step="0.01" value="0.00"></td>`;
-        if (settings.showUnitPrice) priceCells += `<td class="text-end align-middle unit-price-total">0.00</td>`;
 
+        // Construim TOATE celulele de preț vizibile într-o singură variabilă
+        let priceCellsHTML = '';
+        if (settings.showMaterial) {
+            priceCellsHTML += `<td><input type="number" class="form-control form-control-sm price-input-visible material-price-visible" step="0.01" value="0.00"></td>`;
+        }
+        if (settings.showLabor) {
+            priceCellsHTML += `<td><input type="number" class="form-control form-control-sm price-input-visible labor-price-visible" step="0.01" value="0.00"></td>`;
+        }
+        if (settings.showEquipment) {
+            priceCellsHTML += `<td><input type="number" class="form-control form-control-sm price-input-visible equipment-price-visible" step="0.01" value="0.00"></td>`;
+        }
+        if (settings.showUnitPrice) {
+            priceCellsHTML += `<td class="text-end align-middle unit-price-total">0.00</td>`;
+        }
+
+        // Construim input-urile ascunse separat
+        const hiddenInputsHTML = `
+            <input type="hidden" name="items[${itemIndex}][material_price]" class="price-input-hidden material-price-hidden" value="0.00">
+            <input type="hidden" name="items[${itemIndex}][labor_price]" class="price-input-hidden labor-price-hidden" value="0.00">
+            <input type="hidden" name="items[${itemIndex}][equipment_price]" class="price-input-hidden equipment-price-hidden" value="0.00">
+        `;
+        
+        // Combinăm totul în structura finală a rândului, plasând corect variabilele
         row.innerHTML = `
             <td>
                 <input type="text" name="items[${itemIndex}][description]" class="form-control form-control-sm description-input" required>
-                <input type="hidden" name="items[${itemIndex}][material_price]" class="price-input-hidden material-price-hidden" value="0.00">
-                <input type="hidden" name="items[${itemIndex}][labor_price]" class="price-input-hidden labor-price-hidden" value="0.00">
-                <input type="hidden" name="items[${itemIndex}][equipment_price]" class="price-input-hidden equipment-price-hidden" value="0.00">
+                ${hiddenInputsHTML}
             </td>
             <td><input type="text" name="items[${itemIndex}][unit_measure]" class="form-control form-control-sm" value="buc" required></td>
             <td><input type="number" name="items[${itemIndex}][quantity]" class="form-control form-control-sm quantity" step="0.01" value="1" required></td>
-            ${priceCells}
+            
+            ${priceCellsHTML}
+
             <td class="text-end align-middle line-total">0.00</td>
             <td><button type="button" class="btn btn-sm btn-danger remove-item-btn"><i class="fa-solid fa-trash-can"></i></button></td>
         `;
+
         tbody.appendChild(row);
         updateEventListenersForRow(row);
+        
         row.querySelector('.description-input').focus();
         itemIndex++;
     };
@@ -238,22 +260,35 @@ function handleOfferForm() {
         addBtn.listenerAttached = true;
     }
     
-    document.querySelectorAll('.offer-item-row').forEach(row => updateEventListenersForRow(row));
-    if (tbody.children.length === 0 && (window.location.href.includes('/oferte/create') || document.querySelector("h1:contains('Creează o ofertă nouă')"))) {
-        addRow();
-    } else {
+    if (document.querySelector("h1").textContent.includes('Editează oferta')) {
+        // Dacă suntem pe edit, ne asigurăm că modul de preț este 'unitar' la început
+        if (priceModeToggle) {
+            priceModeToggle.checked = false;
+        }
+        // Atașăm event listeners la rândurile deja existente
+        document.querySelectorAll('.offer-item-row').forEach(row => {
+            updateEventListenersForRow(row);
+        });
+        // Rulăm calculul inițial
         updateCalculations();
+    } 
+    // Altfel, dacă suntem pe pagina de CREARE și tabelul e gol
+    else if (tbody.children.length === 0 && document.querySelector("h1").textContent.includes('Creează o ofertă nouă')) {
+        // Adăugăm primul rând
+        addRow();
     }
 }
 
 
-// NOU: Funcția pentru creatorul de șabloane
+// Funcția pentru creatorul de șabloane
 function handleTemplateCreator() {
-    const previewContainer = document.getElementById('preview-container');
+    const previewContainer = document.getElementById('preview-page');
     if (!previewContainer) return;
 
+    // Cache pentru elementele de control și preview
     const controls = {
         layout: document.getElementById('layout'),
+        title: document.getElementById('document_title'),
         font: document.getElementById('font_family'),
         color: document.getElementById('accent_color'),
         tableStyle: document.getElementById('table_style'),
@@ -261,64 +296,127 @@ function handleTemplateCreator() {
     };
 
     const preview = {
-        container: previewContainer,
-        header: document.getElementById('preview-header'),
-        logo: document.getElementById('preview-logo'),
-        titleSection: document.getElementById('preview-title-section'),
-        title: document.getElementById('preview-title'),
+        page: previewContainer,
+        headerContainer: document.getElementById('preview-header-container'),
         table: document.getElementById('preview-table'),
         tableHead: document.getElementById('preview-table-head'),
+        stripedRow: document.getElementById('preview-striped-row'),
         footer: document.getElementById('preview-footer'),
     };
 
-    function updatePreview() {
-        // Font & Color
-        preview.container.style.fontFamily = `'${controls.font.value}', sans-serif`;
-        preview.title.style.color = controls.color.value;
-        preview.tableHead.style.backgroundColor = controls.color.value;
-        preview.tableHead.style.color = 'white';
+    // --- Funcții Helper pentru generare HTML ---
+    const getClassicHeader = (color) => `
+        <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="width: 150px; vertical-align: middle;"><div style="width: 120px; height: 60px; background: #eee; text-align: center; line-height: 60px; font-size: 10px; color: #999;">Logo</div></td>
+                    <td style="vertical-align: middle; font-size: 9px; line-height: 1.3;">
+                        <p><strong>NUME FIRMĂ EXEMPLU SRL</strong></p>
+                        <p>Reg. Com.: J12/345/2025 | C.I.F: RO123456</p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div style="text-align: right; margin-bottom: 20px;">
+            <h2 style="color: ${color}; margin: 0;">${controls.title.value}</h2>
+            <p style="font-size: 10px;">Nr: OFC-101 | Data: 29.10.2025</p>
+        </div>`;
 
-        // Footer
+    const getModernHeader = (color) => `
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 120px; height: 60px; background: #eee; text-align: center; line-height: 60px; font-size: 10px; color: #999; margin: 0 auto 15px;">Logo</div>
+            <h2 style="color: ${color}; margin: 0;">${controls.title.value}</h2>
+            <p style="font-size: 10px;">Nr: OFC-101 | Data: 29.10.2025</p>
+            <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 10px; font-size: 9px; line-height: 1.3; margin-top: 15px;">
+                <p><strong>NUME FIRMĂ EXEMPLU SRL</strong> | Reg. Com.: J12/345/2025 | C.I.F: RO123456</p>
+            </div>
+        </div>`;
+    
+    const getCompactHeader = (color) => `
+        <div style="border-top: 5px solid ${color}; padding-top: 10px; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="width: 70%; vertical-align: top;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="width: 130px; vertical-align: middle;"><div style="width: 120px; height: 60px; background: #eee; text-align: center; line-height: 60px; font-size: 10px; color: #999;">Logo</div></td>
+                                <td style="vertical-align: middle; font-size: 9px; line-height: 1.2; padding-left: 10px;">
+                                    <p><strong>NUME FIRMĂ EXEMPLU SRL</strong></p>
+                                    <p>Reg. Com.: J12/345/2025 | C.I.F: RO123456</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td style="width: 30%; vertical-align: top; text-align: right;">
+                        <h2 style="color: ${color}; margin: 0;">${controls.title.value}</h2>
+                        <p style="font-size: 10px;">Nr: OFC-101 | Data: 29.10.2025</p>
+                    </td>
+                </tr>
+            </table>
+        </div>`;
+    
+    const getElegantHeader = (color) => `
+        <div style="margin-bottom: 30px; text-align: right;">
+            <h1 style="color: ${color}; margin: 0; font-family: 'Merriweather', serif; font-weight: bold;">${controls.title.value}</h1>
+            <p style="font-size: 10px; margin-top: 5px;">Nr: OFC-101 / Data: 29.10.2025</p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+             <tr>
+                <td style="font-size: 9px; line-height: 1.3;">
+                    <p style="text-transform: uppercase; color: #999;">Furnizor:</p>
+                    <p><strong>NUME FIRMĂ EXEMPLU SRL</strong><br>Reg. Com.: J12/345/2025 | C.I.F: RO123456</p>
+                </td>
+             </tr>
+        </table>
+        `;
+    
+    const getMinimalistHeader = (color) => `
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+             <tr>
+                <td>
+                    <h2 style="color: ${color}; margin: 0;">${controls.title.value}</h2>
+                </td>
+                <td style="text-align: right; font-size: 10px;">
+                    <p><strong>NUME FIRMĂ EXEMPLU SRL</strong></p>
+                    <p>Nr: OFC-101 | Data: 29.10.2025</p>
+                </td>
+             </tr>
+        </table>
+        <div style="border-bottom: 2px solid ${color}; margin-bottom: 20px;"></div>
+    `;
+
+    // --- Funcția Principală de Update ---
+    function updatePreview() {
+        const layout = controls.layout.value;
+        const color = controls.color.value;
+
+        // Font & Color Globale
+        preview.page.style.fontFamily = `"${controls.font.value}", sans-serif`;
+        preview.tableHead.style.backgroundColor = color;
+        preview.tableHead.style.color = 'white';
+        preview.tableHead.style.borderColor = color;
+
+        // Footer Text
         preview.footer.textContent = controls.footer.value || 'Termenii și condițiile vor apărea aici.';
 
         // Table Style
         preview.table.classList.remove('table-bordered', 'table-striped');
+        preview.stripedRow.style.backgroundColor = 'transparent';
         if (controls.tableStyle.value === 'grid') {
             preview.table.classList.add('table-bordered');
         } else {
-            preview.table.classList.add('table-striped');
+            preview.stripedRow.style.backgroundColor = '#f8f9fa';
         }
-
-        const layoutStyle = controls.layout.value;
-
-        // Resetare stiluri
-        preview.header.className = '';
-        preview.logo.style.margin = '';
-        preview.titleSection.style.textAlign = 'end';
-        preview.header.style.backgroundColor = 'transparent';
-        preview.header.style.color = 'inherit';
-        preview.logo.classList.add('bg-light', 'border', 'p-3');
-        preview.logo.textContent = "Logo Firmă";
-        preview.title.style.fontSize = '1.5rem';
-
-        if (layoutStyle === 'classic') {
-            preview.header.className = 'd-flex justify-content-between align-items-start mb-4';
-        } else if (layoutStyle === 'modern') {
-            preview.header.className = 'text-center mb-4';
-            preview.logo.style.margin = '0 auto 1rem auto';
-            preview.titleSection.style.textAlign = 'center';
-            preview.titleSection.style.width = '100%';
-        } else if (layoutStyle === 'compact') {
-            preview.header.className = 'd-flex justify-content-between align-items-center mb-4 p-3 rounded';
-            preview.header.style.backgroundColor = controls.color.value;
-            preview.header.style.color = 'white';
-            preview.title.style.color = 'white';
-            preview.title.style.fontSize = '1.2rem';
-            preview.logo.classList.remove('bg-light', 'border', 'p-3');
-            preview.logo.textContent = "LOGO";
-        }
+        
+        // Generează HTML-ul header-ului pe baza layout-ului selectat
+        if (layout === 'classic') preview.headerContainer.innerHTML = getClassicHeader(color);
+        else if (layout === 'modern') preview.headerContainer.innerHTML = getModernHeader(color);
+        else if (layout === 'compact') preview.headerContainer.innerHTML = getCompactHeader(color);
+        else if (layout === 'elegant') preview.headerContainer.innerHTML = getElegantHeader(color);
+        else if (layout === 'minimalist') preview.headerContainer.innerHTML = getMinimalistHeader(color);
     }
 
+    // Attach event listeners
     Object.values(controls).forEach(control => {
         if (!control.listenerAttached) {
             control.addEventListener('input', updatePreview);
@@ -326,25 +424,226 @@ function handleTemplateCreator() {
         }
     });
 
+    // Update inițial
     updatePreview();
+}
+
+// NOUA Versiune pentru a afișa notificarea de succes
+function handleSuccessToast() {
+    const body = document.body;
+    const successMessage = body.dataset.successMessage;
+
+    if (successMessage) {
+        const toastContainer = document.querySelector('.toast-container');
+        if (toastContainer) {
+            const toastHTML = `
+                <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body"><i class="fa-solid fa-check-circle me-2"></i>${successMessage}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>`;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const newToastEl = toastContainer.lastElementChild;
+
+            if (newToastEl) {
+                const toast = new Toast(newToastEl, { delay: 2500 });
+                newToastEl.addEventListener('hidden.bs.toast', () => newToastEl.remove());
+                toast.show();
+            }
+        }
+        // Curățăm atributul pentru a nu mai fi declanșat la navigările Swup
+        delete body.dataset.successMessage;
+    }
+}
+
+// NOUA Versiune pentru a afișa notificarea de eroare
+function handleErrorToast() {
+    const body = document.body;
+    const errorMessage = body.dataset.errorMessage;
+
+    if (errorMessage) {
+        const toastContainer = document.querySelector('.toast-container');
+        if (toastContainer) {
+            const toastHTML = `
+                <div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body"><i class="fa-solid fa-exclamation-triangle me-2"></i>${errorMessage}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>`;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const newToastEl = toastContainer.lastElementChild;
+
+            if (newToastEl) {
+                const toast = new Toast(newToastEl, { delay: 4000 });
+                newToastEl.addEventListener('hidden.bs.toast', () => newToastEl.remove());
+                toast.show();
+            }
+        }
+        // Curățăm atributul
+        delete body.dataset.errorMessage;
+    }
+}
+
+function handleNumberingModeToggle() {
+    const autoModeRadio = document.getElementById('mode_auto');
+    const manualModeRadio = document.getElementById('mode_manual');
+    const autoOptionsDiv = document.getElementById('auto-numbering-options');
+
+    if (!autoModeRadio || !manualModeRadio || !autoOptionsDiv) {
+        return;
+    }
+
+    function toggleOptions() {
+        autoOptionsDiv.style.display = autoModeRadio.checked ? 'block' : 'none';
+    }
+
+    if (!autoModeRadio.listenerAttached) {
+        autoModeRadio.addEventListener('change', toggleOptions);
+        autoModeRadio.listenerAttached = true;
+    }
+    if (!manualModeRadio.listenerAttached) {
+        manualModeRadio.addEventListener('change', toggleOptions);
+        manualModeRadio.listenerAttached = true;
+    }
+    
+    // Rulează la încărcare pentru a seta starea corectă
+    toggleOptions();
+}
+
+function handleCuiApiSearch() {
+    const searchBtn = document.getElementById('cui-search-btn');
+    const searchInput = document.getElementById('cui-search-input');
+    
+    // Rulează codul doar dacă elementele necesare există pe pagina curentă
+    if (!searchBtn || !searchInput) {
+        return;
+    }
+
+    const apiResult = document.getElementById('api-result');
+    const formFields = {
+        name: document.getElementById('name'),
+        vat_number: document.getElementById('vat_number'),
+        trade_register_number: document.getElementById('trade_register_number'),
+        address: document.getElementById('address')
+    };
+
+    const searchFunction = () => {
+        const cui = searchInput.value.trim().toUpperCase().replace('RO', '');
+        if (!cui) {
+            apiResult.textContent = 'Vă rugăm introduceți un CUI.';
+            apiResult.className = 'mt-2 small text-danger';
+            return;
+        }
+
+        apiResult.textContent = 'Se caută...';
+        apiResult.className = 'mt-2 small text-muted';
+        
+        // Asigură-te că folosești protocolul corect (https)
+        fetch(`https://lista-firme.info/api/v1/info?cui=${cui}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Răspunsul rețelei nu a fost ok.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.name) {
+                    const { name, cui: cuiVal, reg_com, address = {} } = data;
+                    
+                    formFields.name.value = name || '';
+                    formFields.vat_number.value = `RO${cuiVal}` || '';
+                    formFields.trade_register_number.value = reg_com || '';
+
+                    const adresaParts = [];
+                    if (address.county) adresaParts.push(address.county);
+                    if (address.city) adresaParts.push(address.city);
+                    if (address.street) adresaParts.push(`Str. ${address.street}`);
+                    if (address.number) adresaParts.push(`Nr. ${address.number}`);
+                    formFields.address.value = adresaParts.join(', ');
+
+                    apiResult.textContent = `Firmă găsită: ${name}. Câmpurile au fost pre-completate.`;
+                    apiResult.className = 'mt-2 small text-success';
+                } else {
+                    apiResult.textContent = "Firmă negăsită sau CUI invalid.";
+                    apiResult.className = 'mt-2 small text-danger';
+                }
+            })
+            .catch(error => {
+                console.error('API Error:', error);
+                apiResult.textContent = "A apărut o eroare la interogarea API-ului. Vă rugăm verificați consola.";
+                apiResult.className = 'mt-2 small text-danger';
+            });
+    };
+
+    // Adăugăm ascultători de evenimente doar o singură dată
+    if (!searchBtn.listenerAttached) {
+        searchBtn.addEventListener('click', searchFunction);
+        searchBtn.listenerAttached = true;
+    }
+    if (!searchInput.listenerAttached) {
+        searchInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Previne trimiterea formularului
+                searchFunction();
+            }
+        });
+        searchInput.listenerAttached = true;
+    }
 }
 
 // --- FUNCȚIA PRINCIPALĂ DE INIȚIALIZARE ---
 function initPage() {
+    // Curățăm orice notificare rămasă de la o navigare anterioară
+    // Această linie este crucială
+    document.querySelectorAll('.toast.shown').forEach(toast => toast.remove());
+    
     handleSidebar();
     handleClientSearch();
     handleOfferSearch();
     handleOfferSettingsToggles();
     handleOfferForm();
-    handleTemplateCreator(); // Adăugăm noua funcție aici
+    handleTemplateCreator();
+    handleSuccessToast();
+    handleErrorToast();
+    handleNumberingModeToggle();
+    handleCuiApiSearch();
 
     // Inițializăm toate modalele
-    handleDeleteModal('deleteClientModal', 'data-form-id');
-    handleDeleteModal('deleteOfferModal', 'data-form-id');
-    handleDeleteModal('deleteUserModal', 'data-form-id'); // Adăugăm și modalul pentru utilizatori
+    handleDeleteModal('deleteClientModal', 'confirmDeleteBtnClient', 'data-form-id');
+    handleDeleteModal('deleteOfferModal', 'confirmDeleteBtnOffer', 'data-form-id');
+    handleDeleteModal('deleteUserModal', 'confirmDeleteBtnUser', 'data-form-id');
 }
 
-// Pornim scripturile la încărcarea inițială a paginii
+// --- CONFIGURARE SWUP & EVENIMENTE ---
 document.addEventListener('DOMContentLoaded', initPage);
-const swup = new Swup({ containers: ['#swup', '#sidebar-nav'] });
+
+const swup = new Swup({
+    containers: ['#swup', '#sidebar-nav'],
+    cache: false // Dezactivăm cache-ul pe timpul dezvoltării
+});
+
+// NOU: Hook pentru a curăța elementele Bootstrap înainte de tranziție
+swup.hooks.on('visit:start', () => {
+    // Închidem orice modal deschis
+    const openModal = document.querySelector('.modal.show');
+    if (openModal) {
+        // Obținem instanța Bootstrap și o închidem corect
+        const modalInstance = bootstrap.Modal.getInstance(openModal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    }
+    // Ștergem fundalul semi-transparent dacă a rămas blocat
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+    // Scoatem clasa de pe body
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+});
+
+// Hook care rulează DUPĂ ce noua pagină a fost încărcată
 swup.hooks.on('visit:end', initPage);

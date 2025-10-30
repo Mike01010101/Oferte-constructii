@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Offer;
-use App\Models\User;
+use App\Services\OfferCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -59,7 +59,11 @@ class OfferController extends Controller
             return redirect()->route('offer-settings.show')->with('error', 'Vă rugăm să configurați mai întâi setările de ofertare.');
         }
 
-        $offerNumber = ($settings->prefix ?? '') . $settings->next_number . ($settings->suffix ?? '');
+        $offerNumber = ''; // Default este gol pentru modul manual
+        if ($settings->numbering_mode === 'auto') {
+            // Am eliminat 'suffix' și am adăugat anul curent
+            $offerNumber = ($settings->prefix ?? '') . $settings->next_number . '/' . now()->year;
+        }
         
         return view('offers.create', compact('clients', 'offerNumber', 'settings'));
     }
@@ -109,7 +113,10 @@ class OfferController extends Controller
                  $offer->items()->create($itemData);
             }
 
-            $company->offerSetting?->increment('next_number');
+            // Incrementăm numărul doar dacă numerotarea este automată
+            if ($company->offerSetting?->numbering_mode === 'auto') {
+                $company->offerSetting->increment('next_number');
+            }
             DB::commit();
             return redirect()->route('oferte.index')->with('success', 'Oferta a fost creată cu succes!');
         } catch (\Exception $e) {
@@ -118,24 +125,6 @@ class OfferController extends Controller
         }
     }
     
-    /**
-     * Afișează detaliile unei oferte (pagina de vizualizare).
-     */
-    public function show(Offer $oferte)
-    {
-        $offer = $oferte;
-        if ($offer->company_id !== Auth::user()->company_id) { abort(403); }
-
-        $offer->load(['client', 'items', 'assignedTo']);
-        
-        $company = Auth::user()->company;
-        $companyProfile = $company->companyProfile;
-        $templateSettings = $company->templateSetting;
-        $offerSettings = $company->offerSetting;
-
-        return view('offers.show', compact('offer', 'companyProfile', 'templateSettings', 'offerSettings'));
-    }
-
     /**
      * Afișează formularul de editare pentru o ofertă existentă.
      */
@@ -227,6 +216,28 @@ class OfferController extends Controller
         return redirect()->route('oferte.index')->with('success', 'Oferta a fost ștearsă cu succes.');
     }
 
+        /**
+     * Afișează detaliile unei oferte (pagina de vizualizare).
+     */
+    public function show(Offer $oferte)
+    {
+        $offer = $oferte;
+        if ($offer->company_id !== Auth::user()->company_id) { abort(43); }
+
+        $offer->load(['client', 'items', 'assignedTo', 'company.companyProfile', 'company.templateSetting', 'company.offerSetting']);
+        
+        // NOU: Folosim serviciul pentru a pre-calcula toate datele
+        $calculations = new OfferCalculationService($offer);
+
+        return view('offers.show', [
+            'offer' => $offer,
+            'calculations' => $calculations, // Trimitem obiectul cu toate calculele gata făcute
+            'companyProfile' => $offer->company->companyProfile,
+            'templateSettings' => $offer->company->templateSetting,
+            'offerSettings' => $offer->company->offerSetting
+        ]);
+    }
+
     /**
      * Generează și descarcă PDF-ul pentru o ofertă.
      */
@@ -234,17 +245,21 @@ class OfferController extends Controller
     {
         $offer = $oferte;
         if ($offer->company_id !== Auth::user()->company_id) { abort(403); }
-
-        $offer->load(['client', 'items', 'assignedTo']);
         
-        $company = Auth::user()->company;
-        $companyProfile = $company->companyProfile;
-        $templateSettings = $company->templateSetting;
-        $offerSettings = $company->offerSetting;
+        $offer->load(['client', 'items', 'assignedTo', 'company.companyProfile', 'company.templateSetting', 'company.offerSetting']);
 
+        // NOU: Folosim ACELAȘI serviciu și aici
+        $calculations = new OfferCalculationService($offer);
+        
         $pdfFileName = 'Oferta-' . str_replace('/', '-', $offer->offer_number) . '.pdf';
         
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('offers.pdf', compact('offer', 'companyProfile', 'templateSettings', 'offerSettings'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('offers.pdf', [
+            'offer' => $offer,
+            'calculations' => $calculations, // Trimitem exact același pachet de date
+            'companyProfile' => $offer->company->companyProfile,
+            'templateSettings' => $offer->company->templateSetting,
+            'offerSettings' => $offer->company->offerSetting
+        ]);
         
         return $pdf->download($pdfFileName);
     }

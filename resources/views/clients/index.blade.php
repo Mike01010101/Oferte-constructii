@@ -17,34 +17,11 @@
         </div>
     </div>
 
-    @if (session('success'))
-        <div class="alert alert-success"> {{ session('success') }} </div>
-    @endif
-
     <div class="card">
         <div class="card-body">
             <!-- Containerul unde se va încărca tabelul -->
             <div id="clients-table-container">
                 @include('clients.partials.clients-table', ['clients' => $clients])
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Confirmare Ștergere -->
-<div class="modal fade" id="deleteClientModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmare ștergere</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Sunteți sigur că doriți să ștergeți acest client? Acțiunea este ireversibilă.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Da, șterge</button>
             </div>
         </div>
     </div>

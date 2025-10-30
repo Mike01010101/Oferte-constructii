@@ -18,19 +18,15 @@ class TemplateSettingController extends Controller
     {
         $company = Auth::user()->company;
 
-        // Validăm doar câmpurile care există în formular
+        // Am actualizat regulile de validare pentru a include toate opțiunile noi
         $validatedData = $request->validate([
-            'layout' => ['required', Rule::in(['classic', 'modern', 'compact'])],
-            'font_family' => ['required', Rule::in(['Roboto', 'Lato', 'Lora', 'Merriweather'])],
+            'layout' => ['required', Rule::in(['classic', 'modern', 'compact', 'elegant', 'minimalist'])],
+            'document_title' => 'required|string|max:255',
+            'font_family' => ['required', Rule::in(['Roboto', 'Lato', 'Merriweather', 'Open Sans', 'Montserrat', 'Source Serif Pro'])],
             'table_style' => ['required', Rule::in(['grid', 'striped'])],
             'accent_color' => 'required|string|starts_with:#|size:7',
-            'footer_text' => 'nullable|string',
+            'footer_text' => 'nullable|string|max:5000',
         ]);
-
-        // Adăugăm manual valorile fixe pe care le-am eliminat din formular
-        // pentru a nu se pierde din baza de date sau a avea erori
-        $validatedData['document_title'] = 'DEVIZ OFERTĂ';
-        $validatedData['logo_alignment'] = 'left';
 
         $company->templateSetting()->updateOrCreate(
             ['company_id' => $company->id],

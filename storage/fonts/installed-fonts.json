@@ -1,0 +1,26 @@
+{
+    "roboto": {
+        "normal": "C:\\xampp\\htdocs\\Aplicatie-oferte\\storage\\fonts\/roboto_normal_af070d676d49bc963e2b7d5029b535d0",
+        "bold": "roboto_bold_206aee76f5c40ec93c73b6015917dcbf"
+    },
+    "lato": {
+        "normal": "C:\\xampp\\htdocs\\Aplicatie-oferte\\storage\\fonts\/lato_normal_2eadb61d4cb84337d38bbdf09cf23353",
+        "bold": "lato_bold_866c88cd5e3b070b988c93d973688361"
+    },
+    "merriweather": {
+        "normal": "C:\\xampp\\htdocs\\Aplicatie-oferte\\storage\\fonts\/merriweather_normal_f0427b82596650e41e6f980a3eeec4d1",
+        "bold": "merriweather_bold_31f401cd57305b803d063dcb559fc044"
+    },
+    "open sans": {
+        "normal": "C:\\xampp\\htdocs\\Aplicatie-oferte\\storage\\fonts\/open_sans_normal_90ecf6711039c5850b849a140284dae3",
+        "bold": "open_sans_bold_ca40836e0f16bef93d49c00f20cefba2"
+    },
+    "montserrat": {
+        "normal": "C:\\xampp\\htdocs\\Aplicatie-oferte\\storage\\fonts\/montserrat_normal_ab1cb5c9ed4514a8de837c6b2f448e25",
+        "bold": "montserrat_bold_e1e4e5c87ba6291c160c62cf4c6d523f"
+    },
+    "source serif pro": {
+        "normal": "C:\\xampp\\htdocs\\Aplicatie-oferte\\storage\\fonts\/source_serif_pro_normal_aa2f1de5c8c7ca49d3720f64a9b6df89",
+        "bold": "source_serif_pro_bold_76bcc269d8c5b28ed8e65d5690c8a36d"
+    }
+}

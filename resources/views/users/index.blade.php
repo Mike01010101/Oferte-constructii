@@ -7,10 +7,6 @@
         <a href="{{ route('utilizatori.create') }}" class="btn btn-primary">Adaugă utilizator nou</a>
     </div>
 
-    @if (session('success'))
-        <div class="alert alert-success"> {{ session('success') }} </div>
-    @endif
-
     <div class="card">
         <div class="card-body">
             <table class="table table-hover">
@@ -62,26 +58,6 @@
              <div class="mt-3">{{ $users->links() }}</div>
         </div>
     </div>
-<!-- Modal de Confirmare Ștergere -->
-<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteUserModalLabel">Confirmare ștergere</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Sunteți sigur că doriți să ștergeți acest utilizator? Această acțiune este ireversibilă.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Da, șterge</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-    <!-- Aici vine codul HTML al modalului pe care l-am adăugat la Pasul 1 -->
 
     @push('scripts')
     <script>

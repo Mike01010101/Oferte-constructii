@@ -4,11 +4,6 @@
 <div class="container-fluid">
     <h1 class="h3 mb-4">Creează o ofertă nouă</h1>
 
-    {{-- Afișează erorile de sesiune --}}
-    @if (session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
-
     {{-- Afișează TOATE erorile de validare --}}
     @if ($errors->any())
         <div class="alert alert-danger">
@@ -21,8 +16,6 @@
         </div>
     @endif
 
-    @if (session('error')) <div class="alert alert-danger">{{ session('error') }}</div> @endif
-    
     <form method="POST" action="{{ route('oferte.store') }}">
         @csrf
         
@@ -41,8 +34,11 @@
                         @error('client_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-4 mb-3">
-                         <label for="offer_number" class="form-label">Număr ofertă</label>
-                         <input type="text" class="form-control" id="offer_number" name="offer_number" value="{{ $offerNumber }}" readonly>
+                        <label for="offer_number" class="form-label">Număr ofertă*</label>
+                        <input type="text" class="form-control" id="offer_number" name="offer_number" 
+                            value="{{ old('offer_number', $offerNumber) }}" 
+                            @if($settings->numbering_mode === 'auto') readonly @endif 
+                            required>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label for="offer_date" class="form-label">Data ofertei*</label>
@@ -81,7 +77,11 @@
                                 <th style="width: 5%;"></th>
                             </tr>
                         </thead>
-                        <tbody id="offer-items-tbody">
+                        <tbody id="offer-items-tbody" 
+                            data-show-material="{{ $settings->show_material_column ? 'true' : 'false' }}"
+                            data-show-labor="{{ $settings->show_labor_column ? 'true' : 'false' }}"
+                            data-show-equipment="{{ $settings->show_equipment_column ? 'true' : 'false' }}"
+                            data-show-unit-price="{{ $settings->show_unit_price_column ? 'true' : 'false' }}">
                             {{-- Rândurile generate de JavaScript --}}
                         </tbody>
                         <tfoot>
@@ -111,157 +111,4 @@
         </div>
     </form>
 </div>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const settings = {
-        showMaterial: {{ ($settings->show_material_column ?? false) ? 'true' : 'false' }},
-        showLabor: {{ ($settings->show_labor_column ?? false) ? 'true' : 'false' }},
-        showEquipment: {{ ($settings->show_equipment_column ?? false) ? 'true' : 'false' }},
-        showUnitPrice: {{ ($settings->show_unit_price_column ?? false) ? 'true' : 'false' }},
-    };
-
-    const addBtn = document.getElementById('add-item-btn');
-    const tbody = document.getElementById('offer-items-tbody');
-    const grandTotalElem = document.getElementById('grand-total');
-    const priceModeToggle = document.getElementById('price-mode-toggle');
-    const priceModeLabels = document.querySelectorAll('.price-mode-label');
-    let itemIndex = 0;
-
-    function isTotalMode() {
-        return priceModeToggle.checked;
-    }
-
-    function addRow() {
-        const row = document.createElement('tr');
-        row.classList.add('offer-item-row');
-        let priceCells = '';
-        
-        if (settings.showMaterial) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible material-price-visible" step="0.01" value="0.00"></td>`;
-        if (settings.showLabor) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible labor-price-visible" step="0.01" value="0.00"></td>`;
-        if (settings.showEquipment) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible equipment-price-visible" step="0.01" value="0.00"></td>`;
-        
-        let hiddenPriceInputs = `
-            <input type="hidden" name="items[${itemIndex}][material_price]" class="price-input-hidden material-price-hidden" value="0.00">
-            <input type="hidden" name="items[${itemIndex}][labor_price]" class="price-input-hidden labor-price-hidden" value="0.00">
-            <input type="hidden" name="items[${itemIndex}][equipment_price]" class="price-input-hidden equipment-price-hidden" value="0.00">
-        `;
-
-        if (settings.showUnitPrice) priceCells += `<td class="text-end align-middle unit-price-total">0.00</td>`;
-        
-        row.innerHTML = `
-            <td>
-                <input type="text" name="items[${itemIndex}][description]" class="form-control form-control-sm description-input" required>
-                ${hiddenPriceInputs}
-            </td>
-            <td><input type="text" name="items[${itemIndex}][unit_measure]" class="form-control form-control-sm" value="buc" required></td>
-            <td><input type="number" name="items[${itemIndex}][quantity]" class="form-control form-control-sm quantity" step="0.01" value="1" required></td>
-            ${priceCells}
-            <td class="text-end align-middle line-total">0.00</td>
-            <td><button type="button" class="btn btn-sm btn-danger remove-item-btn">X</button></td>
-        `;
-        tbody.appendChild(row);
-        updateEventListenersForRow(row);
-        updatePriceModeLabels();
-
-        row.querySelector('.description-input').focus();
-        
-        itemIndex++;
-    }
-
-    function updateCalculations() {
-        let grandTotal = 0;
-        document.querySelectorAll('.offer-item-row').forEach(row => {
-            const qty = parseFloat(row.querySelector('.quantity').value) || 0;
-            
-            let materialValue = parseFloat(row.querySelector('.material-price-visible')?.value) || 0;
-            let laborValue = parseFloat(row.querySelector('.labor-price-visible')?.value) || 0;
-            let equipmentValue = parseFloat(row.querySelector('.equipment-price-visible')?.value) || 0;
-
-            let unitMaterial, unitLabor, unitEquipment;
-
-            if (isTotalMode()) {
-                unitMaterial = (qty > 0) ? materialValue / qty : 0;
-                unitLabor = (qty > 0) ? laborValue / qty : 0;
-                unitEquipment = (qty > 0) ? equipmentValue / qty : 0;
-            } else {
-                unitMaterial = materialValue;
-                unitLabor = laborValue;
-                unitEquipment = equipmentValue;
-            }
-
-            if(row.querySelector('.material-price-hidden')) row.querySelector('.material-price-hidden').value = unitMaterial.toFixed(2);
-            if(row.querySelector('.labor-price-hidden')) row.querySelector('.labor-price-hidden').value = unitLabor.toFixed(2);
-            if(row.querySelector('.equipment-price-hidden')) row.querySelector('.equipment-price-hidden').value = unitEquipment.toFixed(2);
-            
-            const unitPriceTotal = unitMaterial + unitLabor + unitEquipment;
-            const lineTotal = qty * unitPriceTotal;
-
-            if (settings.showUnitPrice) row.querySelector('.unit-price-total').textContent = unitPriceTotal.toFixed(2);
-            row.querySelector('.line-total').textContent = lineTotal.toFixed(2);
-            grandTotal += lineTotal;
-        });
-        grandTotalElem.textContent = grandTotal.toFixed(2) + ' RON';
-    }
-    
-    function updatePriceModeLabels() {
-        const newLabel = isTotalMode() ? '(total)' : '(unitar)';
-        priceModeLabels.forEach(label => label.textContent = newLabel);
-    }
-
-    priceModeToggle.addEventListener('change', function() {
-        updatePriceModeLabels();
-        document.querySelectorAll('.price-input-visible').forEach(input => input.value = '0.00');
-        updateCalculations();
-    });
-    
-    function updateEventListenersForRow(row) {
-        row.querySelector('.remove-item-btn').onclick = function() {
-            this.closest('tr').remove();
-            updateCalculations();
-        };
-        row.querySelectorAll('.quantity, .price-input-visible').forEach(input => {
-            input.oninput = updateCalculations;
-        });
-    }
-
-    tbody.addEventListener('keydown', function(event) {
-        if (event.key !== 'Enter') return;
-
-        const targetInput = event.target;
-        const currentRow = targetInput.closest('.offer-item-row');
-        if (!currentRow) return;
-
-        const visibleInputs = Array.from(currentRow.querySelectorAll('input:not([type="hidden"])'));
-        const lastVisibleInput = visibleInputs[visibleInputs.length - 1];
-        const allRows = Array.from(tbody.querySelectorAll('.offer-item-row'));
-        const lastRow = allRows[allRows.length - 1];
-
-        if (currentRow === lastRow && targetInput === lastVisibleInput) {
-            event.preventDefault();
-            addRow();
-        }
-    });
-    
-    addBtn.addEventListener('click', addRow);
-    
-    // Pentru pagina de editare, trebuie să pre-populăm rândurile existente
-    if (tbody.children.length > 0) {
-        itemIndex = tbody.children.length;
-        document.querySelectorAll('.offer-item-row').forEach(row => {
-            updateEventListenersForRow(row);
-        });
-        updateCalculations();
-    } else {
-        // Pentru pagina de creare, adăugăm primul rând
-        addRow();
-    }
-});
-</script>
-@endpush
 @endsection
-
-<style>
-.price-col { min-width: 120px; }
-</style>

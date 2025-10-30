@@ -24,43 +24,43 @@ class OfferSettingController extends Controller
     {
         $company = Auth::user()->company;
 
+        // Am actualizat regulile de validare pentru a include toate opțiunile noi
         $validatedData = $request->validate([
-            'prefix' => 'nullable|string|max:20',
-            'suffix' => 'nullable|string|max:20',
-            'start_number' => 'required|integer|min:1',
+            'numbering_mode' => ['required', Rule::in(['auto', 'manual'])],
+            'prefix' => 'nullable|string|max:50',
+            'start_number' => 'required_if:numbering_mode,auto|integer|min:1',
+            'show_unit_price_column' => 'sometimes|boolean',
             'vat_percentage' => 'required|numeric|min:0',
-            // Validăm doar câmpurile care ar putea fi trimise
             'summary_cam_percentage' => 'nullable|numeric|min:0',
             'summary_indirect_percentage' => 'nullable|numeric|min:0',
             'summary_profit_percentage' => 'nullable|numeric|min:0',
             'pdf_price_display_mode' => ['required', Rule::in(['unit', 'total'])],
         ]);
 
-        // Tratăm manual checkbox-urile: dacă nu sunt trimise, le setăm valoarea la 0 (false)
+        // Tratăm manual checkbox-urile: dacă nu sunt trimise, valoarea lor va fi false
+        $validatedData['show_unit_price_column'] = $request->has('show_unit_price_column');
         $validatedData['include_summary_in_prices'] = $request->has('include_summary_in_prices');
-        // Dacă noua opțiune e bifată, forțăm cealaltă să fie falsă
-        if ($validatedData['include_summary_in_prices']) {
-            $validatedData['show_summary_block'] = false;
-        }
         $validatedData['show_material_column'] = $request->has('show_material_column');
         $validatedData['show_labor_column'] = $request->has('show_labor_column');
         $validatedData['show_equipment_column'] = $request->has('show_equipment_column');
-        $validatedData['show_unit_price_column'] = $request->has('show_unit_price_column');
-        $validatedData['show_summary_block'] = $request->has('show_summary_block');
-        
-        
-        $currentSettings = $company->offerSetting;
 
-        if ($currentSettings) {
-            if ($validatedData['start_number'] > $currentSettings->next_number) {
-                $validatedData['next_number'] = $validatedData['start_number'];
-            }
-            $currentSettings->update($validatedData);
+        // Dacă opțiunea de includere în prețuri e bifată, forțăm blocul de sumar să fie ascuns
+        if ($validatedData['include_summary_in_prices']) {
+            $validatedData['show_summary_block'] = false;
         } else {
+            $validatedData['show_summary_block'] = $request->has('show_summary_block');
+        }
+        
+        // NOUA LOGICĂ: Actualizăm numărul următor doar dacă modul este auto
+        if ($validatedData['numbering_mode'] === 'auto' && $request->has('start_number')) {
             $validatedData['next_number'] = $validatedData['start_number'];
-            $company->offerSetting()->create($validatedData);
         }
 
-        return redirect()->route('offer-settings.show')->with('success', 'Setările de ofertare au fost salvate cu succes!');
+        $company->offerSetting()->updateOrCreate(
+            ['company_id' => $company->id],
+            $validatedData
+        );
+
+        return redirect()->route('offer-settings.show')->with('success', 'Setările de ofertare au fost salvate!');
     }
 }

@@ -17,7 +17,6 @@
         </div>
     </div>
 
-    @if (session('success')) <div class="alert alert-success">{{ session('success') }}</div> @endif
     
     <div class="card">
         <div class="card-body">
@@ -26,25 +25,6 @@
             </div>
         </div>
     </div>
-</div>
-
-<!-- Modal de Confirmare -->
-<div class="modal fade" id="deleteOfferModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Confirmare ștergere</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p>Sunteți sigur că doriți să ștergeți această ofertă? Acțiunea este ireversibilă.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
-        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Da, șterge</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 @push('scripts')

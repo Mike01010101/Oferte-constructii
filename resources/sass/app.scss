@@ -347,9 +347,14 @@ html.is-leaving .transition-fade {
 .modal-content {
     background-color: var(--element-bg);
     border-color: var(--border-color);
+    color: var(--text-primary);
 }
 .modal-header, .modal-footer {
     border-color: var(--border-color);
+}
+/* Asigurăm că și titlul preia culoarea corectă, pentru siguranță */
+.modal-title {
+    color: var(--text-primary);
 }
 .btn-close {
     filter: invert(var(--is-dark, 0));
@@ -383,4 +388,9 @@ html[data-theme='dark'] {
 .badge {
     --bs-badge-color: var(--text-secondary);
     --bs-badge-bg: var(--element-bg-hover);
+}
+/* Stiluri pentru notificările de tip "toast"
+-------------------------------------------------- */
+.toast-container {
+    z-index: 1100; // Asigură că este deasupra oricărui alt element
 }

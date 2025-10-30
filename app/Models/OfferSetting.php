@@ -15,6 +15,8 @@ class OfferSetting extends Model
         'suffix',
         'start_number',
         'next_number',
+        'numbering_mode',
+        'show_unit_price_column',
         'vat_percentage',
         'show_material_column',
         'show_labor_column',

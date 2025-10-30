@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Company;
 
 class Offer extends Model
 {
@@ -40,8 +41,16 @@ class Offer extends Model
     {
         return $this->hasMany(OfferItem::class);
     }
-    public function assignedTo()
+        public function assignedTo()
     {
         return $this->belongsTo(User::class, 'assigned_to_user_id');
+    }
+
+    /**
+     * Definește relația inversă cu modelul Company.
+     */
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 }

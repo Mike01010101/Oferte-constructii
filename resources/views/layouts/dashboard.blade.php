@@ -24,8 +24,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    
+    @stack('head_links')
 </head>
-<body>
+<body
+    @if(session('success')) data-success-message="{{ session('success') }}" @endif
+    @if(session('error')) data-error-message="{{ session('error') }}" @endif
+>
     <div id="app">
         
         <aside class="sidebar" id="sidebar">
@@ -72,6 +77,12 @@
                             <span>Creator șabloane</span>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ route('offer-settings.show') }}" class="nav-link {{ request()->routeIs('offer-settings.show') ? 'active' : '' }}">
+                            <i class="fa-solid fa-cogs"></i>
+                            <span>Setări ofertare</span>
+                        </a>
+                    </li>
 
                     @role('Owner|Administrator')
                     <li class="nav-section-header">Management</li>
@@ -88,12 +99,6 @@
                         <a href="{{ route('profile.show') }}" class="nav-link {{ request()->routeIs('profile.show') ? 'active' : '' }}">
                             <i class="fa-solid fa-building"></i>
                             <span>Profilul firmei</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('offer-settings.show') }}" class="nav-link {{ request()->routeIs('offer-settings.show') ? 'active' : '' }}">
-                            <i class="fa-solid fa-cogs"></i>
-                            <span>Setări ofertare</span>
                         </a>
                     </li>
                 </ul>
@@ -142,8 +147,49 @@
                 @yield('content')
             </div>
         </main>
+        {{-- Aici se închide <div id="swup"> --}}
+
+    </div> 
+    {{-- Aici se închide <div id="app">. Toast-ul trebuie să fie DUPĂ acest div. --}}
+
+    <!-- Containerul gol pentru notificări, care va fi populat de JavaScript -->
+    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1100;"></div>
+    <!-- Definirea globală a modalelor de ștergere -->
+    
+    <!-- Modal Ștergere Client -->
+    <div class="modal fade" id="deleteClientModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Confirmare ștergere</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><p>Sunteți sigur că doriți să ștergeți acest client? Acțiunea este ireversibilă.</p></div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button><button type="button" class="btn btn-danger" id="confirmDeleteBtnClient">Da, șterge</button></div>
+            </div>
+        </div>
     </div>
 
+    <!-- Modal Ștergere Ofertă -->
+    <div class="modal fade" id="deleteOfferModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Confirmare ștergere</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><p>Sunteți sigur că doriți să ștergeți această ofertă? Acțiunea este ireversibilă.</p></div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button><button type="button" class="btn btn-danger" id="confirmDeleteBtnOffer">Da, șterge</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ștergere Utilizator -->
+    <div class="modal fade" id="deleteUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Confirmare ștergere</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><p>Sunteți sigur că doriți să ștergeți acest utilizator? Acțiunea este ireversibilă.</p></div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button><button type="button" class="btn btn-danger" id="confirmDeleteBtnUser">Da, șterge</button></div>
+            </div>
+        </div>
+    </div>
+
+    @stack('modals')
     @stack('scripts')
 </body>
 </html>

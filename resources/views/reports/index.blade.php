@@ -10,7 +10,7 @@
             <div class="card">
                 <div class="card-body d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <div class="text-muted text-uppercase small">Număr total oferte</div>
+                        <div class="text text-uppercase small">Număr total oferte</div>
                         <div class="h4 fw-bold mb-0">{{ $totalOffers }}</div>
                     </div>
                     <div class="ms-3">
@@ -24,7 +24,7 @@
             <div class="card">
                 <div class="card-body d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <div class="text-muted text-uppercase small">Valoare oferte acceptate</div>
+                        <div class="text text-uppercase small">Valoare oferte acceptate</div>
                         <div class="h4 fw-bold mb-0">{{ number_format($totalValueAccepted, 2, ',', '.') }} RON</div>
                     </div>
                     <div class="ms-3">

@@ -4,8 +4,6 @@
 <div class="container-fluid">
     <h1 class="h3 mb-4">Editează oferta: {{ $offer->offer_number }}</h1>
 
-    @if (session('error')) <div class="alert alert-danger">{{ session('error') }}</div> @endif
-
     <form method="POST" action="{{ route('oferte.update', $offer->id) }}">
         @csrf
         @method('PUT')
@@ -78,7 +76,11 @@
                                 <th style="width: 5%;"></th>
                             </tr>
                         </thead>
-                        <tbody id="offer-items-tbody">
+                        <tbody id="offer-items-tbody"
+                            data-show-material="{{ $settings->show_material_column ? 'true' : 'false' }}"
+                            data-show-labor="{{ $settings->show_labor_column ? 'true' : 'false' }}"
+                            data-show-equipment="{{ $settings->show_equipment_column ? 'true' : 'false' }}"
+                            data-show-unit-price="{{ $settings->show_unit_price_column ? 'true' : 'false' }}">
                             {{-- Aici populăm rândurile existente cu noua structură --}}
                             @foreach (old('items', $offer->items->toArray()) as $index => $item)
                                 <tr class="offer-item-row">
