@@ -36,6 +36,11 @@ self.addEventListener('activate', evt => {
 
 // Evenimentul fetch: răspunde cu resurse din cache sau de pe rețea
 self.addEventListener('fetch', evt => {
+    // NOU: Ignorăm cererile care nu sunt pentru site-ul nostru (ex: extensii Chrome)
+    if (!evt.request.url.startsWith(self.location.origin)) {
+        return;
+    }
+    
     // Nu stoca în cache request-urile non-GET
     if (evt.request.method !== 'GET') {
         return;
