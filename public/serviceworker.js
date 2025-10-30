@@ -53,9 +53,10 @@ self.addEventListener('fetch', evt => {
                 return cacheRes;
             }
             // Altfel, facem fetch de pe rețea
-            return fetch(evt.request).then(fetchRes => {
+            return fetch(evt.request, { redirect: 'follow' }).then(fetchRes => { // <-- MODIFICARE AICI
                 // Și adăugăm răspunsul în cache-ul dinamic pentru viitor
                 return caches.open(dynamicCacheName).then(cache => {
+                    // Punem în cache răspunsul final, NU redirecționarea
                     cache.put(evt.request.url, fetchRes.clone());
                     return fetchRes;
                 });
