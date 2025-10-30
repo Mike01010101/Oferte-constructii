@@ -22,19 +22,19 @@ services:
 
  # Serviciul Nginx
   nginx-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.nginx
-    container_name: calcul_deviz_nginx
-    restart: unless-stopped
-    ports:
-      - "8088:80"
-    volumes:
-      - app-storage:/var/www/storage/app/public
-    networks:
-      - calcul-deviz-network
-    depends_on:
-      - app-service
+  build:
+  context: .
+  dockerfile: Dockerfile.nginx
+  container_name: calcul_deviz_nginx
+  restart: unless-stopped
+  ports:
+  - "8088:80"
+  volumes:
+  - app-storage:/var/www/public/storage
+  networks:
+  - calcul-deviz-network
+  depends_on:
+  - app-service
 
 # Serviciul MariaDB
   mariadb-service:

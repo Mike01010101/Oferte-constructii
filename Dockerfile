@@ -62,9 +62,6 @@ COPY --from=builder /var/www/artisan .
 COPY --from=builder /var/www/composer.json .
 COPY --from=builder /var/www/composer.lock .
 
-# Creăm link-ul simbolic ÎNAINTE de a seta permisiunile
-RUN php artisan storage:link
-
 # Setam permisiunile corecte pentru Laravel
 RUN mkdir -p bootstrap/cache \
     && mkdir -p storage/framework/sessions \
