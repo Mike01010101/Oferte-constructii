@@ -813,6 +813,15 @@ function handleReportCharts() {
     }, 0);
 }
 
+// --- ÎNREGISTRARE SERVICE WORKER PENTRU PWA ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/serviceworker.js')
+            .then(reg => console.log('Service worker registered:', reg))
+            .catch(err => console.log('Service worker registration failed:', err));
+    });
+}
+
 // --- FUNCȚIA PRINCIPALĂ DE INIȚIALIZARE ---
 function initPage() {
     // Curățăm orice notificare rămasă de la o navigare anterioară

@@ -6,6 +6,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
 
+    {{-- NOU: Meta tag-uri pentru PWA --}}
+    <meta name="theme-color" content="#ffffff"/>
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+
     {{-- Script esențial pentru a preveni flash-ul la Dark Mode. Rulează înainte de randarea paginii. --}}
     <script>
         (function() {
