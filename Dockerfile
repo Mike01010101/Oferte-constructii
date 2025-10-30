@@ -49,6 +49,10 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /var/www
 
+# NOU: Copiem scriptul de așteptare din stadiul de "builder" și îl facem executabil
+COPY --from=builder /var/www/wait-for-it.sh /usr/local/bin/wait-for-it.sh
+RUN chmod +x /usr/local/bin/wait-for-it.sh
+
 # Copiem fisierele din stadiul de "builder"
 COPY --from=builder /var/www/public ./public
 COPY --from=builder /var/www/vendor ./vendor

@@ -11,14 +11,14 @@ services:
         - APP_URL=${APP_URL}
     container_name: calcul_deviz_app
     restart: unless-stopped
+    command: sh -c "/usr/local/bin/wait-for-it.sh mariadb-service:3306 --timeout=60 --strict -- php-fpm"
     volumes:
       - ./.env:/var/www/.env
       - app-storage:/var/www/storage
     networks:
       - calcul-deviz-network
     depends_on:
-      mariadb-service:
-        condition: service_healthy
+      - mariadb-service
 
   # Serviciul Nginx
   nginx-service:
@@ -51,12 +51,6 @@ services:
       - db-data:/var/lib/mysql
     networks:
       - calcul-deviz-network
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 20s
 
 networks:
   calcul-deviz-network:
