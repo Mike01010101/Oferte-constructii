@@ -13,30 +13,31 @@ services:
     restart: unless-stopped
     volumes:
       - ./.env:/var/www/.env
-      # NOU ȘI CRITIC: Adăugăm un volum pentru storage pentru a persista fișierele încărcate
       - app-storage:/var/www/storage
     networks:
       - calcul-deviz-network
     depends_on:
-      - mariadb-service
+      mariadb-service:
+        condition: service_healthy
 
- # Serviciul Nginx
+  # Serviciul Nginx
   nginx-service:
-  build:
-  context: .
-  dockerfile: Dockerfile.nginx
-  container_name: calcul_deviz_nginx
-  restart: unless-stopped
-  ports:
-  - "8088:80"
-  volumes:
-  - app-storage:/var/www/public/storage
-  networks:
-  - calcul-deviz-network
-  depends_on:
-  - app-service
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: calcul_deviz_nginx
+    restart: unless-stopped
+    ports:
+      - "8088:80"
+    volumes:
+      # Mapăm volumul de stocare direct în folderul public al Nginx
+      - app-storage:/var/www/public/storage
+    networks:
+      - calcul-deviz-network
+    depends_on:
+      - app-service
 
-# Serviciul MariaDB
+  # Serviciul MariaDB
   mariadb-service:
     image: mariadb:latest
     container_name: calcul_deviz_db
@@ -50,7 +51,7 @@ services:
       - db-data:/var/lib/mysql
     networks:
       - calcul-deviz-network
-    healthcheck: # <-- ADAUGĂ ACEST BLOC
+    healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
@@ -63,6 +64,5 @@ networks:
 volumes:
   db-data:
     driver: local
-  # NOU: Definim volumul pentru storage
   app-storage:
     driver: local
