@@ -133,18 +133,6 @@
                     @endif
                 </div>
             </section>
-            <!-- NOU: Secțiune Semnătură și Ștampilă (pentru previzualizare) -->
-            @if ($templateSettings && $templateSettings->stamp_path)
-                <section class="row mt-5">
-                    <div class="col-md-6"></div>
-                    <div class="col-md-6 text-center">
-                        <p>Ofertant,</p>
-                        <img src="{{ asset('storage/' . $templateSettings->stamp_path) }}" 
-                             style="width: {{ $templateSettings->stamp_size }}px; height: auto; margin-top: 5px;"
-                             alt="Stampila">
-                    </div>
-                </section>
-            @endif
         </div>
     </div>
 </div>

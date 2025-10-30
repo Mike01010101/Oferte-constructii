@@ -4,32 +4,67 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Offer;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 
 class ReportController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $company = Auth::user()->company;
 
-        // Calculăm statisticile
-        $totalOffers = $company->offers()->count();
+        // ---- GESTIONARE FILTRU DE DATĂ ----
+        $startDate = $request->input('start_date', Carbon::now()->startOfYear()->toDateString());
+        $endDate = $request->input('end_date', Carbon::now()->toDateString());
+        $carbonStartDate = Carbon::parse($startDate)->startOfDay();
+        $carbonEndDate = Carbon::parse($endDate)->endOfDay();
+
+        // ---- QUERY DE BAZĂ ----
+        $offersQuery = $company->offers()->whereBetween('offer_date', [$carbonStartDate, $carbonEndDate]);
+
+        // ---- CALCULE PENTRU CARDURI (KPIs) - ACTUALIZATE ----
+        $totalOffers = $offersQuery->count();
+        $totalValue = $offersQuery->sum('total_value');
+        $invoicedUnpaidValue = (clone $offersQuery)->where('status', 'Facturata')->sum('total_value');
+        $totalInvoicedValue = (clone $offersQuery)->whereIn('status', ['Facturata', 'Incasata'])->sum('total_value');
+        $cashedInValue = (clone $offersQuery)->where('status', 'Incasata')->sum('total_value'); // NOU
+
+        // ---- DATE PENTRU GRAFICE ----
+        $statusDistribution = (clone $offersQuery)
+            ->select('status', DB::raw('count(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->all();
+
+        $monthlyValues = (clone $offersQuery)
+            ->select(DB::raw('SUM(total_value) as total'), DB::raw("DATE_FORMAT(offer_date, '%Y-%m') as month"))
+            ->groupBy('month')->pluck('total', 'month')->all();
         
-        $totalValueAccepted = $company->offers()
-            ->where('status', 'Acceptata')
-            ->sum('total_value');
+        $period = CarbonPeriod::create($carbonStartDate, '1 month', $carbonEndDate);
+        $monthlyChartData = [];
+        foreach ($period as $date) {
+            $monthKey = $date->format('Y-m');
+            $monthlyChartData[$date->format('M Y')] = $monthlyValues[$monthKey] ?? 0;
+        }
 
-        // Preluăm ultimele 5 oferte
-        $latestOffers = $company->offers()
-            ->with('client')
-            ->latest()
-            ->take(5)
-            ->get();
+        $topClients = (clone $offersQuery)
+            ->join('clients', 'offers.client_id', '=', 'clients.id')
+            ->select('clients.name', DB::raw('SUM(offers.total_value) as total_value'))
+            ->groupBy('clients.name')->orderBy('total_value', 'desc')->take(5)
+            ->pluck('total_value', 'name')->all();
 
-        return view('reports.index', compact(
-            'totalOffers',
-            'totalValueAccepted',
-            'latestOffers'
-        ));
+        return view('reports.index', [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'totalOffers' => $totalOffers,
+            'totalValue' => $totalValue,
+            'invoicedUnpaidValue' => $invoicedUnpaidValue,
+            'totalInvoicedValue' => $totalInvoicedValue,
+            'cashedInValue' => $cashedInValue,
+            'statusDistribution' => $statusDistribution,
+            'monthlyChartData' => $monthlyChartData,
+            'topClients' => $topClients,
+        ]);
     }
 }

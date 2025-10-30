@@ -24,6 +24,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+
+    @if(isset($accentColor) && $accentColor)
+    <style>
+        :root {
+            --primary-accent: {{ $accentColor }};
+        }
+        /* Asigurăm culoarea și pentru dark mode, dacă nu are o variabilă separată */
+        html[data-theme='dark'] {
+            --primary-accent: {{ $accentColor }};
+        }
+    </style>
+    @endif
     
     @stack('head_links')
 </head>

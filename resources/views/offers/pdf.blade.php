@@ -308,7 +308,7 @@
                 <tr>
                     <td class="border-0" style="width: 60%;"></td>
                     <td class="border-0 text-center" style="width: 40%;">
-                        <p>Ofertant,</p>
+                        <p style="font-size: 11px;">Ofertant,</p>
                         <img src="{{ public_path('storage/' . $templateSettings->stamp_path) }}" 
                              style="width: {{ $templateSettings->stamp_size }}px; height: auto; margin-top: 5px;">
                     </td>

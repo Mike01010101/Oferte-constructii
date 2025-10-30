@@ -18,8 +18,7 @@
     --sidebar-width: 260px;
 
     // Light Theme
-    --primary-accent: #007aff;
-    --primary-accent-hover: #005ecb;
+    --primary-accent: #007aff; /* Culoarea de fallback, dacă nu se încarcă dinamic */
     --sidebar-bg: #ffffff;
     --main-bg: #f5f5f7;
     --text-primary: #1d1d1f;
@@ -33,8 +32,7 @@
 
 // Dark Theme
 html[data-theme='dark'] {
-    --primary-accent: #0a84ff;
-    --primary-accent-hover: #3b9eff;
+    --primary-accent: #0a84ff; /* Culoarea de fallback pentru dark mode */
     --sidebar-bg: #1d1d1f;
     --main-bg: #000000;
     --text-primary: #f5f5f7;
@@ -404,4 +402,37 @@ html[data-theme='dark'] {
     background-color: transparent;
     border-color: var(--border-color);
     color: var(--text-primary);
+}
+/* Stiluri dinamice pentru culoarea de accent
+-------------------------------------------------- */
+
+// Butoane principale
+.btn-primary {
+    background-color: var(--primary-accent);
+    border-color: var(--primary-accent);
+    // Asigurăm că textul este vizibil pe culori închise/deschise
+    color: #fff; 
+}
+.btn-primary:hover {
+    // Întunecăm dinamic culoarea de accent, indiferent care este ea
+    filter: brightness(90%);
+    background-color: var(--primary-accent);
+    border-color: var(--primary-accent);
+}
+
+// Link-uri
+.btn-link {
+    color: var(--primary-accent);
+    text-decoration: none;
+}
+.btn-link:hover {
+    color: var(--primary-accent);
+    filter: brightness(90%);
+}
+
+// Focus pe input-uri
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-accent);
+    // Folosim variabila pentru a genera și umbra la focus
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent) 25%, transparent);
 }

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
 class TemplateSettingController extends Controller
 {
@@ -47,6 +48,9 @@ class TemplateSettingController extends Controller
             ['company_id' => $company->id],
             $validatedData
         );
+
+        // Invalidăm (ștergem) cache-ul pentru culoarea de accent
+        Cache::forget('accent_color_company_' . $company->id);
 
         return redirect()->route('template.show')->with('success', 'Setările șablonului au fost salvate cu succes!');
     }
