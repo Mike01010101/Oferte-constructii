@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Serviciul PHP
+# Serviciul PHP
   app-service:
     image: calcul-deviz-app:latest
     build:
@@ -11,13 +11,12 @@ services:
         - APP_URL=${APP_URL}
     container_name: calcul_deviz_app
     restart: unless-stopped
-    command: sh -c "/usr/local/bin/wait-for-it.sh mariadb-service:3306 --timeout=60 --strict -- php-fpm"
+    command: sh -c "/usr/local/bin/wait-for-it.sh mariadb-service:3306 --timeout=30 --strict -- php-fpm"
     volumes:
-      # NOU: Montăm tot codul aplicației într-un volum partajat
+      # Mapăm fișierul .env
+      - ./.env:/var/www/.env
+      # Montăm un singur volum partajat pentru tot codul, inclusiv folderul storage.
       - app-code:/var/www
-      # MODIFICAT: Volumul de stocare este acum o sub-cale a volumului principal.
-      # Asigură persistența fișierelor încărcate.
-      - app-storage:/var/www/storage
     networks:
       - calcul-deviz-network
     depends_on:
@@ -63,8 +62,6 @@ networks:
 volumes:
   db-data:
     driver: local
-  # NOU: Definim volumul pentru codul partajat
+  # Definim un singur volum pentru codul aplicației.
   app-code:
-    driver: local
-  app-storage:
     driver: local
