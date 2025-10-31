@@ -13,7 +13,10 @@ services:
     restart: unless-stopped
     command: sh -c "/usr/local/bin/wait-for-it.sh mariadb-service:3306 --timeout=60 --strict -- php-fpm"
     volumes:
-      - ./.env:/var/www/.env
+      # NOU: Montăm tot codul aplicației într-un volum partajat
+      - app-code:/var/www
+      # MODIFICAT: Volumul de stocare este acum o sub-cale a volumului principal.
+      # Asigură persistența fișierelor încărcate.
       - app-storage:/var/www/storage
     networks:
       - calcul-deviz-network
@@ -30,8 +33,9 @@ services:
     ports:
       - "8088:80"
     volumes:
-      # Mapăm volumul de stocare direct în folderul public al Nginx
-      - app-storage:/var/www/public/storage
+      # NOU: Nginx vede ACELAȘI volum cu codul aplicației ca și serviciul PHP
+      # Acum, când PHP creează symlink-ul 'public/storage', Nginx îl va putea vedea și folosi corect.
+      - app-code:/var/www
     networks:
       - calcul-deviz-network
     depends_on:
@@ -58,6 +62,9 @@ networks:
 
 volumes:
   db-data:
+    driver: local
+  # NOU: Definim volumul pentru codul partajat
+  app-code:
     driver: local
   app-storage:
     driver: local
