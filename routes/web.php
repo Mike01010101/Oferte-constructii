@@ -25,6 +25,14 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('oferte', App\Http\Controllers\OfferController::class);
     Route::get('/oferte/{oferte}/pdf', [App\Http\Controllers\OfferController::class, 'downloadPDF'])->name('oferte.pdf');
 
+    Route::get('/situatii-plata', [App\Http\Controllers\PaymentStatementController::class, 'index'])->name('situatii-plata.index');
+    Route::get('/oferte/{offer}/creeaza-situatie-plata', [App\Http\Controllers\PaymentStatementController::class, 'create'])->name('situatii-plata.create');
+    Route::post('/situatii-plata', [App\Http\Controllers\PaymentStatementController::class, 'store'])->name('situatii-plata.store');
+    Route::get('/situatii-plata/{statement}/editeaza', [App\Http\Controllers\PaymentStatementController::class, 'edit'])->name('situatii-plata.edit');
+    Route::put('/situatii-plata/{statement}', [App\Http\Controllers\PaymentStatementController::class, 'update'])->name('situatii-plata.update');
+    Route::get('/situatii-plata/{statement}/pdf', [App\Http\Controllers\PaymentStatementController::class, 'downloadPDF'])->name('situatii-plata.pdf');
+    Route::delete('/situatii-plata/{statement}', [App\Http\Controllers\PaymentStatementController::class, 'destroy'])->name('situatii-plata.destroy');
+
     Route::get('/rapoarte', [App\Http\Controllers\ReportController::class, 'index'])->name('rapoarte.index');
 
     // Grup pentru managementul firmei, accesibil doar de Owner și Administrator
@@ -34,4 +42,5 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/oferte/{offer}/status', [App\Http\Controllers\OfferController::class, 'updateStatus'])->name('oferte.updateStatus');
     //  Rută pentru alocarea unui utilizator
     Route::patch('/oferte/{offer}/assign', [App\Http\Controllers\OfferController::class, 'assignUser'])->name('oferte.assignUser');
+    Route::get('/oferte/{offer}/verifica-situatie-plata', [App\Http\Controllers\OfferController::class, 'checkPaymentStatement'])->name('oferte.checkPaymentStatement');
 });

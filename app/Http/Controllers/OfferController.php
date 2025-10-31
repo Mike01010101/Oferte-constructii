@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Offer;
-use App\Services\OfferCalculationService;
+use App\Services\CalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +22,7 @@ class OfferController extends Controller
         $offersQuery = Auth::user()->company->offers()
             // Încărcăm relațiile standard
             ->with(['client', 'assignedTo'])
+            ->with(['client', 'assignedTo', 'paymentStatement'])
             ->when($searchTerm, function ($query, $searchTerm) {
                 $query->where(function ($q) use ($searchTerm) {
                     $q->where('offer_number', 'like', "%{$searchTerm}%")
@@ -344,7 +345,7 @@ class OfferController extends Controller
         $offer->load(['client', 'items', 'assignedTo', 'company.companyProfile', 'company.templateSetting', 'company.offerSetting']);
         
         // NOU: Folosim serviciul pentru a pre-calcula toate datele
-        $calculations = new OfferCalculationService($offer);
+        $calculations = new CalculationService($offer);
 
         return view('offers.show', [
             'offer' => $offer,
@@ -366,7 +367,7 @@ class OfferController extends Controller
         $offer->load(['client', 'items', 'assignedTo', 'company.companyProfile', 'company.templateSetting', 'company.offerSetting']);
 
         // NOU: Folosim ACELAȘI serviciu și aici
-        $calculations = new OfferCalculationService($offer);
+        $calculations = new CalculationService($offer);
         
         $pdfFileName = 'Oferta-' . str_replace('/', '-', $offer->offer_number) . '.pdf';
         
@@ -379,5 +380,18 @@ class OfferController extends Controller
         ]);
         
         return $pdf->download($pdfFileName);
+    }
+    /**
+     * Verifică dacă o ofertă are deja o situație de plată și returnează un răspuns JSON.
+     */
+    public function checkPaymentStatement(Offer $offer)
+    {
+        if ($offer->company_id !== Auth::user()->company_id) {
+            return response()->json(['error' => 'Neautorizat'], 403);
+        }
+
+        $hasStatement = $offer->paymentStatement()->exists();
+
+        return response()->json(['has_statement' => $hasStatement]);
     }
 }

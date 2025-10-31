@@ -4,13 +4,14 @@ namespace App\Services;
 
 use App\Models\Offer;
 use App\Models\OfferSetting;
+use App\Models\PaymentStatement;
 
-class OfferCalculationService
+class CalculationService
 {
-    private Offer $offer;
+    private Offer|PaymentStatement $model;
     private OfferSetting $settings;
 
-    // Proprietăți publice pentru a fi accesate direct în Blade
+    // Proprietăți publice
     public float $baseSubtotal = 0;
     public float $recapMultiplier = 1.0;
     public float $camValue = 0;
@@ -19,25 +20,25 @@ class OfferCalculationService
     public float $totalWithoutVat = 0;
     public float $vatValue = 0;
     public float $grandTotal = 0;
-
     public float $totalMaterial = 0;
     public float $totalLabor = 0;
     public float $totalEquipment = 0;
 
-    public function __construct(Offer $offer)
+    public function __construct(Offer|PaymentStatement $model)
     {
-        $this->offer = $offer;
-        // Ne asigurăm că avem mereu setări valide, chiar dacă nu există în DB
-        $this->settings = $offer->company->offerSetting ?? new OfferSetting();
+        $this->model = $model;
+        $this->settings = $model->company->offerSetting ?? new OfferSetting();
         $this->calculate();
     }
 
     private function calculate(): void
     {
-        // --- Pasul 1: Calculăm multiplicatorul de recapitulatie (dacă există) ---
-        $fullBaseSubtotal = $this->offer->total_value;
+        // Pasul 1: Calculăm ÎNTOTDEAUNA valorile de recapitulatie
+        $fullBaseSubtotal = 0;
         $totalBaseLabor = 0;
-        foreach ($this->offer->items as $item) {
+        
+        foreach ($this->model->items as $item) {
+            $fullBaseSubtotal += $item->quantity * ($item->material_price + $item->labor_price + $item->equipment_price);
             $totalBaseLabor += $item->quantity * $item->labor_price;
         }
 
@@ -46,54 +47,43 @@ class OfferCalculationService
         $this->indirectValue = $totalPlusCam * ($this->settings->summary_indirect_percentage / 100);
         $totalPlusIndirect = $totalPlusCam + $this->indirectValue;
         $this->profitValue = $totalPlusIndirect * ($this->settings->summary_profit_percentage / 100);
-
+        
+        // Pasul 2: Determinăm multiplicatorul DOAR dacă opțiunea este bifată
         if ($this->settings->include_summary_in_prices) {
             $totalRecap = $this->camValue + $this->indirectValue + $this->profitValue;
             if ($fullBaseSubtotal > 0) {
                 $this->recapMultiplier = 1 + ($totalRecap / $fullBaseSubtotal);
             }
+        } else {
+            // Dacă opțiunea nu e bifată, multiplicatorul este 1 (nu afectează prețurile)
+            $this->recapMultiplier = 1.0;
         }
 
-        // --- Pasul 2: Resetăm și calculăm totalurile finale, aplicând multiplicatorul ---
+        // Pasul 3: Calculăm totalurile afișate, aplicând multiplicatorul (care este 1 dacă opțiunea e debifată)
         $this->baseSubtotal = 0;
         $this->totalMaterial = 0;
         $this->totalLabor = 0;
         $this->totalEquipment = 0;
 
-        foreach ($this->offer->items as $item) {
-            // Aplicăm multiplicatorul pe fiecare resursă
-            $adjMaterialPrice = $item->material_price * $this->recapMultiplier;
-            $adjLaborPrice = $item->labor_price * $this->recapMultiplier;
-            $adjEquipmentPrice = $item->equipment_price * $this->recapMultiplier;
+        foreach ($this->model->items as $item) {
+            $lineMaterialTotal = $item->quantity * $item->material_price * $this->recapMultiplier;
+            $lineLaborTotal = $item->quantity * $item->labor_price * $this->recapMultiplier;
+            $lineEquipmentTotal = $item->quantity * $item->equipment_price * $this->recapMultiplier;
 
-            // Calculăm totalurile pe linie pentru fiecare resursă, cu prețurile ajustate
-            $lineMaterialTotal = $item->quantity * $adjMaterialPrice;
-            $lineLaborTotal = $item->quantity * $adjLaborPrice;
-            $lineEquipmentTotal = $item->quantity * $adjEquipmentPrice;
-
-            // Adunăm la totalurile generale pe resurse (acestea vor include acum recapitulatiile)
             $this->totalMaterial += $lineMaterialTotal;
             $this->totalLabor += $lineLaborTotal;
             $this->totalEquipment += $lineEquipmentTotal;
 
-            // Adunăm la subtotalul vizibil doar resursele active
-            if ($this->settings->show_material_column) {
-                $this->baseSubtotal += $lineMaterialTotal;
-            }
-            if ($this->settings->show_labor_column) {
-                $this->baseSubtotal += $lineLaborTotal;
-            }
-            if ($this->settings->show_equipment_column) {
-                $this->baseSubtotal += $lineEquipmentTotal;
-            }
+            if ($this->settings->show_material_column) { $this->baseSubtotal += $lineMaterialTotal; }
+            if ($this->settings->show_labor_column) { $this->baseSubtotal += $lineLaborTotal; }
+            if ($this->settings->show_equipment_column) { $this->baseSubtotal += $lineEquipmentTotal; }
         }
 
-        // --- Pasul 3: Stabilim totalurile finale ale ofertei ---
+        // Pasul 4: Calculăm totalurile finale ale documentului
         if ($this->settings->include_summary_in_prices) {
-            // Dacă recapitulatiile sunt incluse, subtotalul vizibil este direct totalul fără tva
             $this->totalWithoutVat = $this->baseSubtotal;
         } else {
-            // Altfel, adunăm recapitulatiile la subtotalul vizibil
+            // Acum, când opțiunea e debifată, adunăm valorile CAM, etc., care au fost calculate la Pasul 1
             $this->totalWithoutVat = $this->baseSubtotal + $this->camValue + $this->indirectValue + $this->profitValue;
         }
 

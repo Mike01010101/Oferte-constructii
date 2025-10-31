@@ -148,6 +148,20 @@
             </div>
         </aside>
 
+        <!-- Modal Creare Situație de Plată -->
+    <div class="modal fade" id="createPaymentStatementModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Confirmare</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><p>Doriți să creați o Situație de Plată pentru această ofertă?</p></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                    <a href="#" class="btn btn-primary" id="confirmCreateStatementBtn">Da, creează</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
         {{-- Containerul principal acum are un ID pentru Swup --}}

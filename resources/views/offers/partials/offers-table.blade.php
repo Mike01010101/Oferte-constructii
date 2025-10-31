@@ -1,4 +1,5 @@
-<table class="table table-hover">
+<div class="table-responsive">
+    <table class="table table-hover">
     <thead>
         <tr>
             <th>Nr. Ofertă / Articol</th>
@@ -14,7 +15,14 @@
         @forelse ($offers as $offer)
             {{-- Rândul principal pentru ofertă --}}
             <tr>
-                <td><strong>{{ $offer->offer_number }}</strong></td>
+                <td>
+                    <strong>{{ $offer->offer_number }}</strong>
+                    @if($offer->paymentStatement)
+                        <a href="{{ route('situatii-plata.index', ['search' => $offer->offer_number]) }}" class="ms-2" title="Vezi Situația de Plată asociată">
+                            <i class="fa-solid fa-file-invoice text-success"></i>
+                        </a>
+                    @endif
+                </td>
                 <td>{{ $offer->client->name }}</td>
                 <td id="assign-cell-{{ $offer->id }}">
                     <div class="dropdown">
@@ -112,4 +120,5 @@
         @endforelse
     </tbody>
 </table>
+</div>
 <div class="mt-3">{{ $offers->links() }}</div>

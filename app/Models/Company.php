@@ -17,4 +17,5 @@ class Company extends Model
     public function templateSetting() { return $this->hasOne(TemplateSetting::class); }
     public function clients() { return $this->hasMany(Client::class); }
     public function offers() { return $this->hasMany(Offer::class); }
+    public function paymentStatements() { return $this->hasMany(PaymentStatement::class);}
 }

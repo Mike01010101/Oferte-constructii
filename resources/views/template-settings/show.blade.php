@@ -124,7 +124,7 @@
             </div>
 
             {{-- Coloana cu previzualizare --}}
-            <div class="col-lg-8">
+            <div class="col-lg-8 d-none d-lg-block">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         Previzualizare Live

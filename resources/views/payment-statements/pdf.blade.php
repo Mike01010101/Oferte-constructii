@@ -2,7 +2,7 @@
 <html lang="ro">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Oferta {{ $offer->offer_number }}</title>
+    <title>Situatie de Plata {{ $statement->statement_number }}</title>
     
     @php
         $layout = $templateSettings->layout ?? 'classic';
@@ -86,8 +86,14 @@
              @if ($companyProfile && $companyProfile->logo_path)
                 <img src="{{ public_path('storage/' . $companyProfile->logo_path) }}" alt="Logo" style="max-height: 80px; margin-bottom: 1rem;">
             @endif
-            <h2 style="color: {{ $accentColor }};">{{ $templateSettings->document_title ?? 'OFERTĂ' }}</h2>
-            <p><strong>Nr:</strong> {{ $offer->offer_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($offer->offer_date)->format('d.m.Y') }}</p>
+            <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ</h2>
+            <p style="font-size: 11px; margin: 0;">
+                <strong>Nr:</strong> {{ $statement->statement_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($statement->statement_date)->format('d.m.Y') }}
+            </p>
+            <p style="font-size: 10px; margin-top: 5px;">(aferentă ofertei: {{ $offer->offer_number }})</p>
+            @if($statement->object)
+                <p style="font-size: 12px; margin: 0 0 5px 0;"><strong>Obiect:</strong> {{ $statement->object }}</p>
+            @endif
         </div>
 
         {{-- NOU: Am încadrat datele firmei într-un chenar stilizat --}}
@@ -129,20 +135,31 @@
         </td>
         <!-- Partea dreaptă: Titlu Ofertă -->
         <td class="border-0 text-end" style="width: 30%; vertical-align: top;">
-        <h2 style="color: {{ $accentColor }}; margin-bottom: 5px;">{{ $templateSettings->document_title ?? 'DEVIZ OFERTĂ' }}</h2>
-        <p><strong>Nr:</strong> {{ $offer->offer_number }}</p>
-        <p><strong>Data:</strong> {{ \Carbon\Carbon::parse($offer->offer_date)->format('d.m.Y') }}</p>
+        <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ</h2>
+            <p style="font-size: 11px; margin: 0;">
+                <strong>Nr:</strong> {{ $statement->statement_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($statement->statement_date)->format('d.m.Y') }}
+            </p>
+            <p style="font-size: 10px; margin-top: 5px;">(aferentă ofertei: {{ $offer->offer_number }})</p>
+            @if($statement->object)
+                <p style="font-size: 12px; margin: 0 0 5px 0;"><strong>Obiect:</strong> {{ $statement->object }}</p>
+            @endif
         </td>
         </tr>
         </table>
         </div>
         @endif
 
-                <!-- NOU: Antet - Layout Elegant -->
+        <!-- NOU: Antet - Layout Elegant -->
         @if ($layout == 'elegant')
         <div class="mb-4 text-end">
-            <h1 style="color: {{ $accentColor }}; margin: 0; font-family: 'Merriweather', serif;">{{ $templateSettings->document_title }}</h1>
-            <p>Nr: {{ $offer->offer_number }} / Data: {{ \Carbon\Carbon::parse($offer->offer_date)->format('d.m.Y') }}</p>
+         <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ</h2>
+            <p style="font-size: 11px; margin: 0;">
+                <strong>Nr:</strong> {{ $statement->statement_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($statement->statement_date)->format('d.m.Y') }}
+            </p>
+            <p style="font-size: 10px; margin-top: 5px;">(aferentă ofertei: {{ $offer->offer_number }})</p>
+            @if($statement->object)
+                <p style="font-size: 12px; margin: 0 0 5px 0;"><strong>Obiect:</strong> {{ $statement->object }}</p>
+            @endif
         </div>
         <table class="border-0 mb-4">
             <tr>
@@ -164,7 +181,14 @@
         <table class="border-0 mb-4">
             <tr>
                 <td class="border-0">
-                    <h2 style="color: {{ $accentColor }}; margin: 0;">{{ $templateSettings->document_title }}</h2>
+                 <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ</h2>
+            <p style="font-size: 11px; margin: 0;">
+                <strong>Nr:</strong> {{ $statement->statement_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($statement->statement_date)->format('d.m.Y') }}
+            </p>
+            <p style="font-size: 10px; margin-top: 5px;">(aferentă ofertei: {{ $offer->offer_number }})</p>
+            @if($statement->object)
+                <p style="font-size: 12px; margin: 0 0 5px 0;"><strong>Obiect:</strong> {{ $statement->object }}</p>
+            @endif
                 </td>
                 <td class="border-0 text-end">
                     <p><strong>{{ $companyProfile->company_name ?? 'N/A' }}</strong></p>
@@ -203,102 +227,27 @@
                         <p><strong>{{ $offer->client->name }}</strong></p>
                         <p>{!! nl2br(e($offer->client->address ?? '')) !!}</p>
                     </td>
-                    @if($offer->object)
-                    <td class="border-0 text-end" style="vertical-align: top;">
-                        <h5>Obiect:</h5>
-                        <p><strong>{{ $offer->object }}</strong></p>
-                    </td>
-                    @endif
                 </tr>
             </table>
         @endif
         @if ($layout == 'classic')
         {{-- NOU: Secțiune evidențiată pentru Titlu, Obiect și detalii --}}
         <div style="background-color: #f8f9fa; padding: 15px; margin-bottom: 15px; text-align: center; border: 1px solid #dee2e6; border-radius: 5px;">
-            <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">{{ $templateSettings->document_title ?? 'DEVIZ OFERTĂ' }}</h2>
-            
-            @if($offer->object)
-                <p style="font-size: 12px; margin: 0 0 5px 0;"><strong>Obiect:</strong> {{ $offer->object }}</p>
-            @endif
-
-            {{-- Am mutat Nr și Data aici, pentru a fi grupate logic --}}
+            <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ</h2>
             <p style="font-size: 11px; margin: 0;">
-                <strong>Nr:</strong> {{ $offer->offer_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($offer->offer_date)->format('d.m.Y') }}
+                <strong>Nr:</strong> {{ $statement->statement_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($statement->statement_date)->format('d.m.Y') }}
             </p>
+            <p style="font-size: 10px; margin-top: 5px;">(aferentă ofertei: {{ $offer->offer_number }})</p>
+            @if($statement->object)
+                <p style="font-size: 12px; margin: 0 0 5px 0;"><strong>Obiect:</strong> {{ $statement->object }}</p>
+            @endif
         </div>
-        @endif
-
-        {{-- Afișăm textul introductiv dacă există --}}
-        @if ($templateSettings && $templateSettings->intro_text)
-            @php
-                // Înlocuim variabilele cu datele reale ale ofertei
-                $introTextWithValues = str_replace(
-                    [
-                        '{obiect}',
-                        '{total_fara_tva}',
-                        '{tva}',
-                        '{total_cu_tva}',
-                        '{client}'
-                    ],
-                    [
-                        $offer->object ?? 'N/A',
-                        number_format($calculations->totalWithoutVat, 2, ',', '.'),
-                        number_format($calculations->vatValue, 2, ',', '.'),
-                        number_format($calculations->grandTotal, 2, ',', '.'),
-                        $offer->client->name ?? 'N/A'
-                    ],
-                    $templateSettings->intro_text
-                );
-
-                // Acum, învelim variabilele originale cu tag-uri <strong> în textul deja procesat
-                $boldedIntroText = str_replace(
-                    [
-                        '{obiect}',
-                        '{total_fara_tva}',
-                        '{tva}',
-                        '{total_cu_tva}',
-                        '{client}'
-                    ],
-                    [
-                        '<strong>{obiect}</strong>',
-                        '<strong>{total_fara_tva}</strong>',
-                        '<strong>{tva}</strong>',
-                        '<strong>{total_cu_tva}</strong>',
-                        '<strong>{client}</strong>'
-                    ],
-                    $templateSettings->intro_text // Pornim din nou de la textul original
-                );
-
-                // În final, înlocuim variabilele din textul cu bold cu valorile reale
-                $finalText = str_replace(
-                    [
-                        '{obiect}',
-                        '{total_fara_tva}',
-                        '{tva}',
-                        '{total_cu_tva}',
-                        '{client}'
-                    ],
-                    [
-                        $offer->object ?? 'N/A',
-                        number_format($calculations->totalWithoutVat, 2, ',', '.'),
-                        number_format($calculations->vatValue, 2, ',', '.'),
-                        number_format($calculations->grandTotal, 2, ',', '.'),
-                        $offer->client->name ?? 'N/A'
-                    ],
-                    $boldedIntroText
-                );
-            @endphp
-            {{-- Afișăm textul procesat, permițând tag-urile <strong> și <br> --}}
-            <div class="mb-3" style="font-size: 10px; line-height: 1.5;">
-                {!! nl2br($finalText) !!}
-            </div>
         @endif
 
         <!-- Tabel Produse -->
         <table>
             <thead>
                 @php
-                    // Definim sufixul o singură dată pentru claritate
                     $priceModeSuffix = '';
                     if ($offerSettings->pdf_price_display_mode == 'total') {
                         $priceModeSuffix = '(Total)';
@@ -319,14 +268,15 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($offer->items as $item)
+                @foreach ($statement->items as $item)
                     @php
-                        // Prețurile unitare, ajustate cu recapitulatia
-                        $adjMatPrice = $item->material_price * $calculations->recapMultiplier;
-                        $adjLabPrice = $item->labor_price * $calculations->recapMultiplier;
-                        $adjEqPrice = $item->equipment_price * $calculations->recapMultiplier;
+                        // Aplicăm multiplicatorul exact ca în PDF-ul de ofertă
+                        $recapMultiplier = $calculations->recapMultiplier;
 
-                        // Prețurile totale pe linie, ajustate
+                        $adjMatPrice = $item->material_price * $recapMultiplier;
+                        $adjLabPrice = $item->labor_price * $recapMultiplier;
+                        $adjEqPrice = $item->equipment_price * $recapMultiplier;
+
                         $totalMat = $item->quantity * $adjMatPrice;
                         $totalLab = $item->quantity * $adjLabPrice;
                         $totalEq = $item->quantity * $adjEqPrice;
@@ -351,48 +301,48 @@
                             <td class="text-end">{{ number_format( $offerSettings->pdf_price_display_mode == 'total' ? $totalLab : $adjLabPrice, 2, ',', '.') }}</td>
                         @endif
                         @if($offerSettings->show_equipment_column)
-                            <td class="text-end">{{ number_format( $offerSettings->pdf_price_display_mode == 'total' ? $totalEq : $adjEqPrice, 2, ',', '.') }}</td>
+                             <td class="text-end">{{ number_format( $offerSettings->pdf_price_display_mode == 'total' ? $totalEq : $adjEqPrice, 2, ',', '.') }}</td>
                         @endif
                         @if($offerSettings->show_unit_price_column) <td class="text-end">{{ number_format($lineUnitPrice, 2, ',', '.') }}</td> @endif
                         <td class="text-end">{{ number_format($lineTotal, 2, ',', '.') }}</td>
                     </tr>
                 @endforeach
-                    </tbody>
-                        {{-- NOU: Adăugăm totalurile pe resurse în footer-ul tabelului --}}
-                        @if($offerSettings->show_material_total || $offerSettings->show_labor_total || $offerSettings->show_equipment_total)
-                        <tfoot style="background-color: #f8f9fa;">
-                            <tr style="font-weight: bold;">
-                                <td colspan="4" class="text-end">Totaluri:</td>
-                                @if($offerSettings->show_material_column)
-                                    <td class="text-end">{{ $offerSettings->show_material_total ? number_format($calculations->totalMaterial, 2, ',', '.') : '' }}</td>
-                                @endif
-                                @if($offerSettings->show_labor_column)
-                                    <td class="text-end">{{ $offerSettings->show_labor_total ? number_format($calculations->totalLabor, 2, ',', '.') : '' }}</td>
-                                @endif
-                                @if($offerSettings->show_equipment_column)
-                                    <td class="text-end">{{ $offerSettings->show_equipment_total ? number_format($calculations->totalEquipment, 2, ',', '.') : '' }}</td>
-                                @endif
-                                {{-- Adăugăm celule goale pentru a alinia corect --}}
-                                @if($offerSettings->show_unit_price_column)
-                                    <td></td>
-                                @endif
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                        @endif
+            </tbody>
+            
+            @if($offerSettings->show_material_total || $offerSettings->show_labor_total || $offerSettings->show_equipment_total)
+            <tfoot style="background-color: #f8f9fa;">
+                <tr style="font-weight: bold;">
+                    <td colspan="4" class="text-end">Totaluri:</td>
+                    @if($offerSettings->show_material_column)
+                        <td class="text-end">{{ $offerSettings->show_material_total ? number_format($calculations->totalMaterial, 2, ',', '.') : '' }}</td>
+                    @endif
+                    @if($offerSettings->show_labor_column)
+                        <td class="text-end">{{ $offerSettings->show_labor_total ? number_format($calculations->totalLabor, 2, ',', '.') : '' }}</td>
+                    @endif
+                    @if($offerSettings->show_equipment_column)
+                        <td class="text-end">{{ $offerSettings->show_equipment_total ? number_format($calculations->totalEquipment, 2, ',', '.') : '' }}</td>
+                    @endif
+                    @if($offerSettings->show_unit_price_column)
+                        <td></td>
+                    @endif
+                    <td></td>
+                </tr>
+            </tfoot>
+            @endif
+
         </table>
         
         <!-- Totaluri și Note / Recapitulatii -->
-        <table class="border-0" style="margin-top: 15px;">
+        <table class="border-0" style="margin-top: 20px;">
             <tr>
                 <td class="border-0" style="vertical-align: top; width: 50%;">
-                    @if($offer->notes)
+                    @if($statement->notes)
                         <strong>Note:</strong>
-                        <p>{!! nl2br(e($offer->notes)) !!}</p>
+                        <p>{!! nl2br(e($statement->notes)) !!}</p>
                     @endif
-
                 </td>
                 <td class="border-0" style="width: 50%; vertical-align: top;">
+                    {{-- Folosim exact aceeași logică ca în offers/pdf --}}
                     @if($offerSettings->show_summary_block)
                         <table style="background-color: #f8f9fa;">
                             <tr><td class="text-end">Subtotal Resurse</td><td class="text-end">{{ number_format($calculations->baseSubtotal, 2, ',', '.') }}</td></tr>
@@ -413,13 +363,13 @@
                 </td>
             </tr>
         </table>
-        <!-- NOU: Secțiune Semnătură și Ștampilă -->
+        
         @if ($templateSettings && $templateSettings->stamp_path)
             <table class="border-0" style="margin-top: 20px;">
                 <tr>
                     <td class="border-0" style="width: 60%;"></td>
                     <td class="border-0 text-center" style="width: 40%;">
-                        <p style="font-size: 11px;">Ofertant,</p>
+                        <p style="font-size: 11px;">Întocmit,</p>
                         <img src="{{ public_path('storage/' . $templateSettings->stamp_path) }}" 
                              style="width: {{ $templateSettings->stamp_size }}px; height: auto; margin-top: 5px;">
                     </td>
@@ -427,7 +377,6 @@
             </table>
         @endif
 
-        <!-- Subsol -->
         <footer>
             {!! nl2br(e($templateSettings->footer_text ?? '')) !!}
         </footer>

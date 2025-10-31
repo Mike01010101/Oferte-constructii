@@ -51,6 +51,10 @@ class Offer extends Model
         return $this->belongsTo(User::class, 'assigned_to_user_id');
     }
 
+    public function paymentStatement()
+    {
+        return $this->hasOne(PaymentStatement::class);
+    }
     /**
      * Definește relația inversă cu modelul Company.
      */

@@ -454,3 +454,32 @@ html[data-theme='dark'] {
         color: #000;
     }
 }
+/* Stiluri specifice pentru ecrane mici (Mobile First)
+-------------------------------------------------- */
+
+// Pe ecrane mai mici de 992px, conținutul este prea înghesuit
+@media (max-width: 991.98px) {
+    .content-wrapper {
+        padding: 1.25rem; // Reducem padding-ul pe mobil
+    }
+
+    // Reducem font-size pentru titlurile principale pe mobil
+    .h1, .h3 {
+        font-size: 1.25rem;
+    }
+
+    // Facem cardurile să ocupe toată lățimea
+    .card {
+        margin-bottom: 1.5rem;
+    }
+    
+    // Asigurăm spațiere corectă pentru formulare pe mobil
+    .form-label {
+        margin-bottom: 0.5rem;
+    }
+
+    // Forțăm coloanele din `row` să fie una sub alta pe mobil
+    .row > [class*="col-"] {
+        margin-bottom: 1rem;
+    }
+}

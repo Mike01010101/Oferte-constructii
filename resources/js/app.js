@@ -2,7 +2,7 @@ import Chart from 'chart.js/auto';
 window.Chart = Chart; 
 import './bootstrap';
 import Swup from 'swup';
-import { Toast } from 'bootstrap';
+import { Toast, Modal } from 'bootstrap';
 
 let activeCharts = [];
 // --- GESTIONARE EVENIMENTE GLOBALE ---
@@ -56,9 +56,17 @@ function handleClientSearch() {
 
 function handleDeleteModal(modalId, confirmBtnId, formIdAttribute) {
     const deleteModal = document.getElementById(modalId);
-    if (!deleteModal) return;
+    // Verificăm dacă modal-ul există pe pagină. Dacă nu, ne oprim.
+    if (!deleteModal) {
+        return;
+    }
 
     const confirmDeleteBtn = document.getElementById(confirmBtnId);
+    // Verificăm dacă și butonul de confirmare există.
+    if (!confirmDeleteBtn) {
+        return;
+    }
+
     let formToSubmitId = null;
 
     if (!deleteModal.listenerAttached) {
@@ -69,7 +77,6 @@ function handleDeleteModal(modalId, confirmBtnId, formIdAttribute) {
         deleteModal.listenerAttached = true;
     }
 
-    // Atașăm listener-ul de click în afara verificării, pentru a funcționa corect cu Swup
     if (confirmDeleteBtn && !confirmDeleteBtn.listenerAttached) {
         confirmDeleteBtn.addEventListener('click', () => {
             if (formToSubmitId) {
@@ -81,7 +88,84 @@ function handleDeleteModal(modalId, confirmBtnId, formIdAttribute) {
     }
 }
 
+function handleQuickAssignUpdate() {
+    const container = document.querySelector('#offers-table-container');
+    if (!container) return;
 
+    // Folosim un nume de proprietate diferit pentru a evita conflictele
+    if (!container.listenerAttachedAssign) {
+        container.addEventListener('click', function(event) {
+            const target = event.target;
+            
+            if (target.classList.contains('assign-user-btn')) {
+                event.preventDefault();
+
+                const offerId = target.dataset.offerId;
+                const userId = target.dataset.userId;
+                const url = target.dataset.url;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const assignCell = document.getElementById(`assign-cell-${offerId}`);
+                        if (assignCell) {
+                            const dropdownToggle = assignCell.querySelector('.dropdown-toggle');
+                            if(dropdownToggle) {
+                                dropdownToggle.textContent = data.assigned_user_name;
+                            }
+                        }
+                        showToast(data.success, 'success');
+                    } else {
+                        showToast(data.error || 'A apărut o eroare.', 'error');
+                    }
+                })
+                .catch(error => { 
+                    console.error('Eroare:', error);
+                    showToast('Eroare de rețea.', 'error');
+                });
+            }
+        });
+        container.listenerAttachedAssign = true;
+    }
+}
+// Funcție helper globală pentru a afișa notificări
+function showToast(message, type = 'success') {
+    const toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) return;
+
+    const icon = type === 'success' 
+        ? '<i class="fa-solid fa-check-circle me-2"></i>' 
+        : '<i class="fa-solid fa-exclamation-triangle me-2"></i>';
+    
+    const bgColor = type === 'success' ? 'bg-success' : 'bg-danger';
+
+    const toastHTML = `
+        <div class="toast align-items-center text-white ${bgColor} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">${icon}${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>`;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    const newToastEl = toastContainer.lastElementChild;
+
+    if (newToastEl) {
+        const toast = new Toast(newToastEl, { delay: 3000 });
+        newToastEl.addEventListener('hidden.bs.toast', () => newToastEl.remove());
+        toast.show();
+    }
+}
 function handleOfferSearch() {
     const searchInput = document.getElementById('search-input');
     const tableContainer = document.getElementById('offers-table-container');
@@ -102,26 +186,37 @@ function handleOfferSearch() {
 }
 
 function handleOfferSettingsToggles() {
-    const showSummary = document.getElementById('show_summary_block');
+    const showSummaryBlock = document.getElementById('show_summary_block');
     const includeInPrices = document.getElementById('include_summary_in_prices');
-    if (!showSummary || !includeInPrices) return;
 
-    function toggleOptions() {
-        includeInPrices.disabled = false; // Asigurăm că nu rămâne blocat
-        showSummary.disabled = false;
+    // Dacă elementele nu există pe pagină, ieșim
+    if (!showSummaryBlock || !includeInPrices) {
+        return;
+    }
 
-        if (includeInPrices.checked) {
-            showSummary.checked = false;
-            showSummary.disabled = true;
+    // Funcția care se va ocupa de logica de comutare
+    function handleToggle(event) {
+        // Identificăm care switch a fost acționat
+        const toggledSwitch = event.target;
+
+        if (toggledSwitch === showSummaryBlock && showSummaryBlock.checked) {
+            // Dacă am bifat "Afișează blocul", debifăm "Include în preț"
+            includeInPrices.checked = false;
+        } else if (toggledSwitch === includeInPrices && includeInPrices.checked) {
+            // Dacă am bifat "Include în preț", debifăm "Afișează blocul"
+            showSummaryBlock.checked = false;
         }
     }
-    
-    // Asigurăm că listener-ul nu se adaugă de mai multe ori
+
+    // Atașăm listener-ul de 'change' la ambele switch-uri, dacă nu a fost deja atașat
+    if (!showSummaryBlock.listenerAttached) {
+        showSummaryBlock.addEventListener('change', handleToggle);
+        showSummaryBlock.listenerAttached = true;
+    }
     if (!includeInPrices.listenerAttached) {
-        includeInPrices.addEventListener('change', toggleOptions);
+        includeInPrices.addEventListener('change', handleToggle);
         includeInPrices.listenerAttached = true;
     }
-    toggleOptions();
 }
 
 function handleOfferForm() {
@@ -150,13 +245,13 @@ function handleOfferForm() {
         // Construim TOATE celulele de preț vizibile într-o singură variabilă
         let priceCellsHTML = '';
         if (settings.showMaterial) {
-            priceCellsHTML += `<td><input type="number" class="form-control form-control-sm price-input-visible material-price-visible" step="0.01" value="0.00"></td>`;
+            priceCellsHTML += `<td><input type="number" class="form-control form-control-sm price-input-visible material-price-visible" step="0.0001" value="0.00"></td>`;
         }
         if (settings.showLabor) {
-            priceCellsHTML += `<td><input type="number" class="form-control form-control-sm price-input-visible labor-price-visible" step="0.01" value="0.00"></td>`;
+            priceCellsHTML += `<td><input type="number" class="form-control form-control-sm price-input-visible labor-price-visible" step="0.0001" value="0.00"></td>`;
         }
         if (settings.showEquipment) {
-            priceCellsHTML += `<td><input type="number" class="form-control form-control-sm price-input-visible equipment-price-visible" step="0.01" value="0.00"></td>`;
+            priceCellsHTML += `<td><input type="number" class="form-control form-control-sm price-input-visible equipment-price-visible" step="0.0001" value="0.00"></td>`;
         }
         if (settings.showUnitPrice) {
             priceCellsHTML += `<td class="text-end align-middle unit-price-total">0.00</td>`;
@@ -210,9 +305,9 @@ function handleOfferForm() {
                 unitEquipment = equipmentValue;
             }
 
-            if(row.querySelector('.material-price-hidden')) row.querySelector('.material-price-hidden').value = unitMaterial.toFixed(2);
-            if(row.querySelector('.labor-price-hidden')) row.querySelector('.labor-price-hidden').value = unitLabor.toFixed(2);
-            if(row.querySelector('.equipment-price-hidden')) row.querySelector('.equipment-price-hidden').value = unitEquipment.toFixed(2);
+            if(row.querySelector('.material-price-hidden')) row.querySelector('.material-price-hidden').value = unitMaterial.toFixed(4);
+            if(row.querySelector('.labor-price-hidden')) row.querySelector('.labor-price-hidden').value = unitLabor.toFixed(4);
+            if(row.querySelector('.equipment-price-hidden')) row.querySelector('.equipment-price-hidden').value = unitEquipment.toFixed(4);
             
             const unitPriceTotal = unitMaterial + unitLabor + unitEquipment;
             const lineTotal = qty * unitPriceTotal;
@@ -241,9 +336,9 @@ function handleOfferForm() {
                 if (laborInput) laborInput.value = (unitLabor * qty).toFixed(2);
                 if (equipmentInput) equipmentInput.value = (unitEquipment * qty).toFixed(2);
             } else {
-                if (materialInput) materialInput.value = unitMaterial.toFixed(2);
-                if (laborInput) laborInput.value = unitLabor.toFixed(2);
-                if (equipmentInput) equipmentInput.value = unitEquipment.toFixed(2);
+                if (materialInput) materialInput.value = unitMaterial.toFixed(4);
+                if (laborInput) laborInput.value = unitLabor.toFixed(4);
+                if (equipmentInput) equipmentInput.value = unitEquipment.toFixed(4);
             }
         });
         updateCalculations();
@@ -263,21 +358,19 @@ function handleOfferForm() {
         addBtn.listenerAttached = true;
     }
     
-    if (document.querySelector("h1").textContent.includes('Editează oferta')) {
-        // Dacă suntem pe edit, ne asigurăm că modul de preț este 'unitar' la început
+    if (tbody.children.length > 0) {
         if (priceModeToggle) {
-            priceModeToggle.checked = false;
+            priceModeToggle.checked = false; // Asigurăm că începem mereu în modul unitar
         }
-        // Atașăm event listeners la rândurile deja existente
+        itemIndex = tbody.children.length; // Setăm indexul corect pentru rândurile noi
         document.querySelectorAll('.offer-item-row').forEach(row => {
             updateEventListenersForRow(row);
         });
-        // Rulăm calculul inițial
+        // Rulăm calculul inițial pentru a afișa totalurile corecte la încărcare
         updateCalculations();
     } 
-    // Altfel, dacă suntem pe pagina de CREARE și tabelul e gol
-    else if (tbody.children.length === 0 && document.querySelector("h1").textContent.includes('Creează o ofertă nouă')) {
-        // Adăugăm primul rând
+    // Dacă tabelul este gol (doar cazul Creare Ofertă Nouă)
+    else if (document.querySelector("h1").textContent.includes('Creează o ofertă nouă')) {
         addRow();
     }
 }
@@ -486,90 +579,93 @@ function handleQuickStatusUpdate() {
                 const newStatus = target.dataset.newStatus;
                 const url = target.dataset.url;
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
+                if (newStatus === 'Finalizata') {
+                    const checkUrl = `/oferte/${offerId}/verifica-situatie-plata`;
+                    
+                    fetch(checkUrl)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.has_statement) {
+                                showToast('Oferta are deja o situație de plată.', 'info');
+                                updateStatusAjax(url, newStatus, csrfToken, offerId);
+                            } else {
+                                // Dacă nu există, afișăm modal-ul de confirmare
+                                const createUrl = `/oferte/${offerId}/creeaza-situatie-plata`;
+                                const modalElement = document.getElementById('createPaymentStatementModal');
+                                if (modalElement) {
+                                    const modal = new Modal(modalElement);
+                                    const confirmBtn = document.getElementById('confirmCreateStatementBtn');
+                                    confirmBtn.href = createUrl;
 
-                fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ status: newStatus })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const statusCell = document.getElementById(`status-cell-${offerId}`);
-                        if (statusCell) {
-                            // Înlocuim DOAR link-ul, nu toată celula, pentru a păstra structura dropdown
-                            const dropdownToggle = statusCell.querySelector('.dropdown-toggle');
-                            if (dropdownToggle) {
-                                dropdownToggle.textContent = newStatus;
-                                // Ștergem clasele vechi de culoare și adăugăm cea nouă
-                                dropdownToggle.className = 'badge dropdown-toggle text-decoration-none ' + data.new_status_class;
+                                    // NOU: Adăugăm un listener pentru a închide modal-ul la click
+                                    confirmBtn.addEventListener('click', () => {
+                                        modal.hide();
+                                    }, { once: true });
+
+                                    modal.show();
+                                    
+                                    modalElement.addEventListener('hidden.bs.modal', (event) => {
+                                        // Rulăm update-ul doar dacă nu am navigat deja
+                                        if (!event.relatedTarget || event.relatedTarget !== confirmBtn) {
+                                            updateStatusAjax(url, newStatus, csrfToken, offerId);
+                                        }
+                                    }, { once: true });
+                                }
                             }
-                        }
-                        showToast(data.success, 'success');
-                    } else {
-                        showToast(data.error || 'A apărut o eroare.', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Eroare:', error);
-                    showToast('Eroare de rețea.', 'error');
-                });
+                        })
+                        .catch(error => {
+                            console.error('Eroare la verificare:', error);
+                            showToast('A apărut o eroare la verificare.', 'error');
+                        });
+                    
+                    return; 
+                }
+
+                updateStatusAjax(url, newStatus, csrfToken, offerId);
              }
         });
         container.listenerAttached = true;
     }
 }
 
-function handleQuickAssignUpdate() {
-    const container = document.querySelector('#offers-table-container');
-    if (!container) return;
-
-    if (!container.listenerAttachedAssign) { // Folosim un nume de proprietate diferit
-        container.addEventListener('click', function(event) {
-            const target = event.target;
-            
-            if (target.classList.contains('assign-user-btn')) {
-                event.preventDefault();
-
-                const offerId = target.dataset.offerId;
-                const userId = target.dataset.userId;
-                const url = target.dataset.url;
-                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-                fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ user_id: userId })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const assignCell = document.getElementById(`assign-cell-${offerId}`);
-                        if (assignCell) {
-                            const dropdownToggle = assignCell.querySelector('.dropdown-toggle');
-                            if(dropdownToggle) {
-                                dropdownToggle.textContent = data.assigned_user_name;
-                            }
-                        }
-                        showToast(data.success, 'success');
-                    } else {
-                        showToast(data.error || 'A apărut o eroare.', 'error');
-                    }
-                })
-                .catch(error => { console.error('Eroare:', error);
-                    showToast('Eroare de rețea.', 'error');});
+function updateStatusAjax(url, newStatus, csrfToken, offerId) {
+    fetch(url, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(response => {
+        if (!response.ok) {
+            // Aruncăm o eroare dacă răspunsul serverului nu este 2xx
+            throw new Error('Răspunsul serverului nu a fost OK');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const statusCell = document.getElementById(`status-cell-${offerId}`);
+            if (statusCell) {
+                const dropdownToggle = statusCell.querySelector('.dropdown-toggle');
+                if (dropdownToggle) {
+                    dropdownToggle.textContent = newStatus;
+                    dropdownToggle.className = 'badge dropdown-toggle text-decoration-none ' + data.new_status_class;
+                }
             }
-        });
-        container.listenerAttachedAssign = true;
-    }
+            // Nu mai afișăm toast aici, pentru a nu dubla mesajele. Toast-ul va fi gestionat
+            // de funcția principală, dacă este necesar.
+        } else {
+            showToast(data.error || 'A apărut o eroare la actualizarea statusului.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Eroare AJAX la updateStatus:', error);
+        showToast('Eroare de rețea la actualizarea statusului.', 'error');
+    });
 }
 
 // NOUA Versiune pentru a afișa notificarea de succes
