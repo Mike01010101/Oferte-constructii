@@ -878,7 +878,7 @@ function handleReportCharts() {
                             borderColor: themeStyles.getPropertyValue('--element-bg').trim(), borderWidth: 3
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
+                    options: { responsive: true, maintainAspectRatio: false, height: 250, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
                 });
                 activeCharts.push(statusChart);
             }
@@ -898,7 +898,7 @@ function handleReportCharts() {
                             borderWidth: 1, borderRadius: 4
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: borderColor } }, x: { ticks: { color: textColor }, grid: { color: 'transparent' } } }, plugins: { legend: { display: false } } }
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, height: 250, ticks: { color: textColor }, grid: { color: borderColor } }, x: { ticks: { color: textColor }, grid: { color: 'transparent' } } }, plugins: { legend: { display: false } } }
                 });
                 activeCharts.push(monthlyChart);
             }
@@ -917,12 +917,31 @@ function handleReportCharts() {
                             backgroundColor: primaryAccentColor + '80', borderColor: primaryAccentColor, borderWidth: 1
                         }]
                     },
-                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { color: textColor }, grid: { color: borderColor } }, y: { ticks: { color: textColor }, grid: { color: 'transparent' } } } }
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, height: 250, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { color: textColor }, grid: { color: borderColor } }, y: { ticks: { color: textColor }, grid: { color: 'transparent' } } } }
                 });
                 activeCharts.push(clientsChart);
             }
         }
     }, 0);
+}
+
+function handleMobileMenuNavigation() {
+    const sidebarNav = document.getElementById('sidebar-nav');
+    if (!sidebarNav) return;
+
+    // Adăugăm un singur listener pe containerul de navigație
+    if (!sidebarNav.listenerAttached) {
+        sidebarNav.addEventListener('click', (event) => {
+            // Verificăm dacă s-a dat click pe un link (<a>)
+            if (event.target.closest('a')) {
+                // Verificăm dacă suntem pe un ecran de mobil (dacă sidebar-ul este "fixed")
+                if (window.getComputedStyle(document.getElementById('sidebar')).position === 'fixed') {
+                    document.body.classList.remove('sidebar-open');
+                }
+            }
+        });
+        sidebarNav.listenerAttached = true;
+    }
 }
 
 // --- FUNCȚIA PRINCIPALĂ DE INIȚIALIZARE ---
@@ -931,6 +950,7 @@ function initPage() {
     document.querySelectorAll('.toast.shown').forEach(toast => toast.remove());
     
     handleSidebar();
+    handleMobileMenuNavigation();
     handleClientSearch();
     handleOfferSearch();
     handleOfferSettingsToggles();

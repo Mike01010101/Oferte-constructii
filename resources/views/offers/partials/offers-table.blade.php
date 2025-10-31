@@ -26,7 +26,7 @@
                 <td>{{ $offer->client->name }}</td>
                 <td id="assign-cell-{{ $offer->id }}">
                     <div class="dropdown">
-                        <a class="text-decoration-none dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="text-decoration-none dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-popper-config='{"strategy":"fixed"}'>
                             {{ $offer->assignedTo->name ?? 'N/A' }}
                         </a>
 
@@ -61,7 +61,7 @@
                 </td>
                 <td class="status-cell" id="status-cell-{{ $offer->id }}">
                     <div class="dropdown">
-                        <a class="badge {{ $offer->getStatusColorClass() }} dropdown-toggle text-decoration-none" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="badge {{ $offer->getStatusColorClass() }} dropdown-toggle text-decoration-none" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-popper-config='{"strategy":"fixed"}'>
                             {{ $offer->status }}
                         </a>
 
