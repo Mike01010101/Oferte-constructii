@@ -19,5 +19,6 @@ class TemplateSetting extends Model
     'footer_text',
     'stamp_path',
     'stamp_size',
+    'intro_text',
 ];
 }

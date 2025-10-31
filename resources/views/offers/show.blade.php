@@ -42,7 +42,13 @@
                     <p class="text-secondary small">{!! nl2br(e($offer->client->address ?? '')) !!}</p>
                 </div>
             </section>
-
+            {{-- NOU: Afișarea obiectului ofertei --}}
+            @if($offer->object)
+            <section class="mb-4">
+                <h5 class="mb-2">Obiectul ofertei:</h5>
+                <p>{{ $offer->object }}</p>
+            </section>
+            @endif
 
             <!-- Tabel cu produse/servicii -->
             <section class="mb-5">

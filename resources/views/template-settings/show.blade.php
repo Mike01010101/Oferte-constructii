@@ -52,6 +52,28 @@
                     </div>
                 </div>
 
+                {{-- NOU: Card Text Introductiv --}}
+                <div class="card mb-4">
+                    <div class="card-header"><i class="fa-solid fa-paragraph me-2"></i> Text Introductiv</div>
+                    <div class="card-body">
+                        <label for="intro_text" class="form-label small">Text descriptiv (înainte de tabelul de produse)</label>
+                        @php
+                            $defaultIntroText = "Urmare a solicitării dumneavoastră, vă prezentăm oferta noastră de preț pentru {obiect}.\n\nValoarea totală a ofertei este de {total_cu_tva} RON (TVA inclus), după cum urmează:";
+                        @endphp
+                        <textarea class="form-control" spellcheck="false" id="intro_text" name="intro_text" rows="6">{{ old('intro_text', $settings->intro_text ?? $defaultIntroText) }}</textarea>
+                        <div class="form-text text-secondary mt-2">
+                            Puteți folosi următoarele variabile, care vor fi înlocuite automat:
+                            <ul class="list-unstyled small mt-1">
+                                <li><code>{obiect}</code> - Obiectul ofertei</li>
+                                <li><code>{total_fara_tva}</code> - Valoarea totală fără TVA</li>
+                                <li><code>{tva}</code> - Valoarea TVA</li>
+                                <li><code>{total_cu_tva}</code> - Valoarea totală cu TVA</li>
+                                <li><code>{client}</code> - Numele clientului</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Card Tabel Produse --}}
                 <div class="card mb-4">
                     <div class="card-header"><i class="fa-solid fa-table me-2"></i> Tabel Produse</div>
@@ -116,7 +138,10 @@
                             <div class="mb-4">
                                 <p style="font-size: 10px;"><strong>Către:</strong><br>NUME CLIENT EXEMPLU SRL<br>Adresa clientului, Nr. 1, Oraș, Județ</p>
                             </div>
-
+                            {{-- NOU: Container pentru textul introductiv --}}
+                            <div id="preview-intro-text" class="mb-4" style="font-size: 10px; line-height: 1.5;">
+                                <!-- Aici va fi injectat textul din textarea -->
+                            </div>
                             <table id="preview-table" class="table table-sm" style="font-size: 10px;">
                                 <thead id="preview-table-head">
                                     <tr><th>Nr.</th><th>Descriere</th><th>Cant.</th><th class="text-end">Preț</th><th class="text-end">Total</th></tr>

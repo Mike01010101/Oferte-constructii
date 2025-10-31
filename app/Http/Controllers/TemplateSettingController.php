@@ -29,8 +29,9 @@ class TemplateSettingController extends Controller
             'table_style' => ['required', Rule::in(['grid', 'striped'])],
             'accent_color' => 'required|string|starts_with:#|size:7',
             'footer_text' => 'nullable|string|max:5000',
-            'stamp' => 'nullable|image|mimes:png|max:2048', // Doar imagini PNG de maxim 2MB
+            'stamp' => 'nullable|image|mimes:png|max:2048',
             'stamp_size' => 'required|integer|min:50|max:300',
+            'intro_text' => 'nullable|string|max:5000',
         ]);
 
         // Gestionarea încărcării fișierului de ștampilă

@@ -27,6 +27,7 @@ class Offer extends Model
         'assigned_to_user_id',
         'offer_number',
         'offer_date',
+        'object',
         'status',
         'total_value',
         'notes',
@@ -38,6 +39,10 @@ class Offer extends Model
     }
 
     public function items()
+    {
+        return $this->hasMany(OfferItem::class);
+    }
+    public function matching_items()
     {
         return $this->hasMany(OfferItem::class);
     }

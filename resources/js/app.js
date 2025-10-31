@@ -296,6 +296,7 @@ function handleTemplateCreator() {
         footer: document.getElementById('footer_text'),
         stamp: document.getElementById('stamp'),
         stampSize: document.getElementById('stamp_size'),
+        introText: document.getElementById('intro_text'),
     };
     const stampSizeValue = document.getElementById('stamp_size_value');
 
@@ -307,6 +308,7 @@ function handleTemplateCreator() {
         stripedRow: document.getElementById('preview-striped-row'),
         footer: document.getElementById('preview-footer'),
         stamp: document.getElementById('preview-stamp'),
+        introText: document.getElementById('preview-intro-text'),
     };
 
     // --- Funcții Helper pentru generare HTML ---
@@ -324,14 +326,14 @@ function handleTemplateCreator() {
         </div>
         <div style="text-align: right; margin-bottom: 20px;">
             <h2 style="color: ${color}; margin: 0;">${controls.title.value}</h2>
-            <p style="font-size: 10px;">Nr: OFC-101 | Data: 29.10.2025</p>
+            <p style="font-size: 10px;">Nr: AAA-101 | Data: 29.10.2025</p>
         </div>`;
 
     const getModernHeader = (color) => `
         <div style="text-align: center; margin-bottom: 20px;">
             <div style="width: 120px; height: 60px; background: #eee; text-align: center; line-height: 60px; font-size: 10px; color: #999; margin: 0 auto 15px;">Logo</div>
             <h2 style="color: ${color}; margin: 0;">${controls.title.value}</h2>
-            <p style="font-size: 10px;">Nr: OFC-101 | Data: 29.10.2025</p>
+            <p style="font-size: 10px;">Nr: AAA-101 | Data: 29.10.2025</p>
             <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 10px; font-size: 9px; line-height: 1.3; margin-top: 15px;">
                 <p><strong>NUME FIRMĂ EXEMPLU SRL</strong> | Reg. Com.: J12/345/2025 | C.I.F: RO123456</p>
             </div>
@@ -354,7 +356,7 @@ function handleTemplateCreator() {
                     </td>
                     <td style="width: 30%; vertical-align: top; text-align: right;">
                         <h2 style="color: ${color}; margin: 0;">${controls.title.value}</h2>
-                        <p style="font-size: 10px;">Nr: OFC-101 | Data: 29.10.2025</p>
+                        <p style="font-size: 10px;">Nr: AAA-101 | Data: 29.10.2025</p>
                     </td>
                 </tr>
             </table>
@@ -363,7 +365,7 @@ function handleTemplateCreator() {
     const getElegantHeader = (color) => `
         <div style="margin-bottom: 30px; text-align: right;">
             <h1 style="color: ${color}; margin: 0; font-family: 'Merriweather', serif; font-weight: bold;">${controls.title.value}</h1>
-            <p style="font-size: 10px; margin-top: 5px;">Nr: OFC-101 / Data: 29.10.2025</p>
+            <p style="font-size: 10px; margin-top: 5px;">Nr: AAA-101 / Data: 29.10.2025</p>
         </div>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
              <tr>
@@ -383,7 +385,7 @@ function handleTemplateCreator() {
                 </td>
                 <td style="text-align: right; font-size: 10px;">
                     <p><strong>NUME FIRMĂ EXEMPLU SRL</strong></p>
-                    <p>Nr: OFC-101 | Data: 29.10.2025</p>
+                    <p>Nr: AAA-101 | Data: 29.10.2025</p>
                 </td>
              </tr>
         </table>
@@ -404,6 +406,20 @@ function handleTemplateCreator() {
         // Footer Text
         preview.footer.textContent = controls.footer.value || 'Termenii și condițiile vor apărea aici.';
 
+        // NOU: Actualizare text introductiv
+        if(controls.introText && preview.introText) {
+            let text = controls.introText.value;
+            // Înlocuim variabilele cu valori exemplu
+            text = text.replace(/{obiect}/g, 'Renovare apartament Exemplu')
+                       .replace(/{client}/g, 'NUME CLIENT EXEMPLU SRL')
+                       .replace(/{total_fara_tva}/g, '1.500,00')
+                       .replace(/{tva}/g, '285,00')
+                       .replace(/{total_cu_tva}/g, '1.785,00')
+                       .replace(/\n/g, '<br>'); // Convertim liniile noi în tag-uri <br>
+
+            preview.introText.innerHTML = text;
+        }
+        
         // Table Style
         preview.table.classList.remove('table-bordered', 'table-striped');
         preview.stripedRow.style.backgroundColor = 'transparent';

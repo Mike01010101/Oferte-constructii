@@ -181,44 +181,117 @@
         <div style="border-bottom: 2px solid {{ $accentColor }}; margin-bottom: 20px;"></div>
         @endif
 
-        <!-- Informații Client (doar pentru layout-urile vechi) -->
-        @if(in_array($layout, ['classic', 'modern', 'compact']))
+                {{-- Afișăm Clientul și Obiectul --}}
+        
+        {{-- Pentru layout-ul Clasic, obiectul este în chenarul special de mai jos, deci afișăm doar clientul --}}
+        @if ($layout == 'classic')
             <table class="border-0 mb-4">
                 <tr>
                     <td class="border-0">
                         <h5>Către:</h5>
                         <p><strong>{{ $offer->client->name }}</strong></p>
                         <p>{!! nl2br(e($offer->client->address ?? '')) !!}</p>
-                    </td>
-                </tr>
-            </table>
-        @endif
-
-        <!-- Informații Client și Titlu Ofertă -->
-        @if($layout == 'classic')
-            <table class="border-0 mb-4">
-                <tr>
-                    <td class="border-0" style="width: 50%;">
-                        <h5>Către:</h5>
-                        <p><strong>{{ $offer->client->name }}</strong></p>
-                        <p>{!! nl2br(e($offer->client->address ?? '')) !!}</p>
-                    </td>
-                    <td class="border-0 text-end" style="width: 50%; vertical-align: bottom;">
-                        <h2 style="color: {{ $accentColor }};">{{ $templateSettings->document_title ?? 'DEVIZ OFERTĂ' }}</h2>
-                        <p><strong>Nr:</strong> {{ $offer->offer_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($offer->offer_date)->format('d.m.Y') }}</p>
                     </td>
                 </tr>
             </table>
         @else
-             <table class="border-0 mb-4">
+        {{-- Pentru toate celelalte layout-uri, afișăm clientul și obiectul (dacă există) aici --}}
+            <table class="border-0 mb-4">
                 <tr>
-                    <td class="border-0">
+                    <td class="border-0" style="vertical-align: top;">
                         <h5>Către:</h5>
                         <p><strong>{{ $offer->client->name }}</strong></p>
                         <p>{!! nl2br(e($offer->client->address ?? '')) !!}</p>
                     </td>
+                    @if($offer->object)
+                    <td class="border-0 text-end" style="vertical-align: top;">
+                        <h5>Obiect:</h5>
+                        <p><strong>{{ $offer->object }}</strong></p>
+                    </td>
+                    @endif
                 </tr>
             </table>
+        @endif
+        @if ($layout == 'classic')
+        {{-- NOU: Secțiune evidențiată pentru Titlu, Obiect și detalii --}}
+        <div style="background-color: #f8f9fa; padding: 15px; margin-bottom: 25px; text-align: center; border: 1px solid #dee2e6; border-radius: 5px;">
+            <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">{{ $templateSettings->document_title ?? 'DEVIZ OFERTĂ' }}</h2>
+            
+            @if($offer->object)
+                <p style="font-size: 12px; margin: 0 0 5px 0;"><strong>Obiect:</strong> {{ $offer->object }}</p>
+            @endif
+
+            {{-- Am mutat Nr și Data aici, pentru a fi grupate logic --}}
+            <p style="font-size: 11px; margin: 0;">
+                <strong>Nr:</strong> {{ $offer->offer_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($offer->offer_date)->format('d.m.Y') }}
+            </p>
+        </div>
+        @endif
+
+        {{-- Afișăm textul introductiv dacă există --}}
+        @if ($templateSettings && $templateSettings->intro_text)
+            @php
+                // Înlocuim variabilele cu datele reale ale ofertei
+                $introTextWithValues = str_replace(
+                    [
+                        '{obiect}',
+                        '{total_fara_tva}',
+                        '{tva}',
+                        '{total_cu_tva}',
+                        '{client}'
+                    ],
+                    [
+                        $offer->object ?? 'N/A',
+                        number_format($calculations->totalWithoutVat, 2, ',', '.'),
+                        number_format($calculations->vatValue, 2, ',', '.'),
+                        number_format($calculations->grandTotal, 2, ',', '.'),
+                        $offer->client->name ?? 'N/A'
+                    ],
+                    $templateSettings->intro_text
+                );
+
+                // Acum, învelim variabilele originale cu tag-uri <strong> în textul deja procesat
+                $boldedIntroText = str_replace(
+                    [
+                        '{obiect}',
+                        '{total_fara_tva}',
+                        '{tva}',
+                        '{total_cu_tva}',
+                        '{client}'
+                    ],
+                    [
+                        '<strong>{obiect}</strong>',
+                        '<strong>{total_fara_tva}</strong>',
+                        '<strong>{tva}</strong>',
+                        '<strong>{total_cu_tva}</strong>',
+                        '<strong>{client}</strong>'
+                    ],
+                    $templateSettings->intro_text // Pornim din nou de la textul original
+                );
+
+                // În final, înlocuim variabilele din textul cu bold cu valorile reale
+                $finalText = str_replace(
+                    [
+                        '{obiect}',
+                        '{total_fara_tva}',
+                        '{tva}',
+                        '{total_cu_tva}',
+                        '{client}'
+                    ],
+                    [
+                        $offer->object ?? 'N/A',
+                        number_format($calculations->totalWithoutVat, 2, ',', '.'),
+                        number_format($calculations->vatValue, 2, ',', '.'),
+                        number_format($calculations->grandTotal, 2, ',', '.'),
+                        $offer->client->name ?? 'N/A'
+                    ],
+                    $boldedIntroText
+                );
+            @endphp
+            {{-- Afișăm textul procesat, permițând tag-urile <strong> și <br> --}}
+            <div class="mb-4" style="font-size: 10px; line-height: 1.5;">
+                {!! nl2br($finalText) !!}
+            </div>
         @endif
 
         <!-- Tabel Produse -->

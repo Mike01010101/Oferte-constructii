@@ -20,55 +20,62 @@ class OfferController extends Controller
         $searchTerm = $request->input('search');
 
         $offersQuery = Auth::user()->company->offers()
-            ->with(['client', 'assignedTo', 'items', 'company.offerSetting'])
+            // Încărcăm relațiile standard
+            ->with(['client', 'assignedTo'])
             ->when($searchTerm, function ($query, $searchTerm) {
                 $query->where(function ($q) use ($searchTerm) {
                     $q->where('offer_number', 'like', "%{$searchTerm}%")
                       ->orWhere('status', 'like', "%{$searchTerm}%")
-                      // Căutare în relația cu clienții
                       ->orWhereHas('client', function ($clientQuery) use ($searchTerm) {
                           $clientQuery->where('name', 'like', "%{$searchTerm}%");
                       })
-                      // NOU: Căutare în relația cu articolele din ofertă
                       ->orWhereHas('items', function ($itemsQuery) use ($searchTerm) {
                           $itemsQuery->where('description', 'like', "%{$searchTerm}%");
                       });
-                });
+                })
+                // NOU ȘI CRUCIAL: Încărcăm relația `matching_items` DOAR cu articolele care se potrivesc
+                ->with(['matching_items' => function ($query) use ($searchTerm) {
+                    $query->where('description', 'like', "%{$searchTerm}%");
+                }]);
             })
             ->latest();
 
-                $offers = $offersQuery->paginate(15)->appends($request->query());
+        $offers = $offersQuery->paginate(15)->appends($request->query());
 
-        // Obținem setările o singură dată
-        $settings = Auth::user()->company->offerSetting;
+        // Calculăm valoarea vizibilă doar dacă NU există o căutare activă
+        if (empty($searchTerm)) {
+            $settings = Auth::user()->company->offerSetting;
+            // Ne asigurăm că relația 'items' este încărcată, pentru a nu face N+1 queries
+            $offers->load('items');
 
-        // Calculăm valoarea vizibilă pentru fiecare ofertă
-        foreach ($offers as $offer) {
-            $visibleTotal = 0;
-            foreach ($offer->items as $item) {
-                $lineSubtotal = 0;
-                if ($settings && $settings->show_material_column) {
-                    $lineSubtotal += $item->material_price;
+            foreach ($offers as $offer) {
+                $visibleTotal = 0;
+                foreach ($offer->items as $item) {
+                    $lineSubtotal = 0;
+                    if ($settings && $settings->show_material_column) {
+                        $lineSubtotal += $item->material_price;
+                    }
+                    if ($settings && $settings->show_labor_column) {
+                        $lineSubtotal += $item->labor_price;
+                    }
+                    if ($settings && $settings->show_equipment_column) {
+                        $lineSubtotal += $item->equipment_price;
+                    }
+                    $visibleTotal += $item->quantity * $lineSubtotal;
                 }
-                if ($settings && $settings->show_labor_column) {
-                    $lineSubtotal += $item->labor_price;
-                }
-                if ($settings && $settings->show_equipment_column) {
-                    $lineSubtotal += $item->equipment_price;
-                }
-                $visibleTotal += $item->quantity * $lineSubtotal;
+                // Adăugăm noua proprietate la obiectul ofertă
+                $offer->visible_total_value = $visibleTotal;
             }
-            // Adăugăm noua proprietate la obiectul ofertă
-            $offer->visible_total_value = $visibleTotal;
         }
 
         $users = Auth::user()->company->users()->orderBy('name')->get();
 
         if ($request->ajax()) {
-            return view('offers.partials.offers-table', compact('offers', 'users'))->render();
+            // Trimitem și searchTerm la view-ul partial pentru AJAX
+            return view('offers.partials.offers-table', compact('offers', 'users', 'searchTerm'))->render();
         }
 
-        return view('offers.index', compact('offers', 'users'));
+        return view('offers.index', compact('offers', 'users', 'searchTerm'));
     }
 
     /**
@@ -102,6 +109,7 @@ class OfferController extends Controller
             'client_id' => 'required|exists:clients,id',
             'offer_number' => 'required|string|unique:offers,offer_number',
             'offer_date' => 'required|date',
+            'object' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.description' => 'required|string',
@@ -128,8 +136,9 @@ class OfferController extends Controller
                 'status' => 'Draft',
                 'offer_number' => $validatedData['offer_number'],
                 'offer_date' => Carbon::parse($validatedData['offer_date']),
+                'object' => $validatedData['object'],
                 'notes' => $validatedData['notes'],
-                'total_value' => $subtotal_de_baza, // Salvăm MEREU subtotalul de bază
+                'total_value' => $subtotal_de_baza,
             ]);
 
             foreach ($items as $itemData) {
@@ -204,6 +213,7 @@ class OfferController extends Controller
             'status' => ['required', Rule::in(array_keys(Offer::STATUSES))],
             'offer_number' => ['required', 'string', Rule::unique('offers')->ignore($offer->id)],
             'offer_date' => 'required|date',
+            'object' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.description' => 'required|string',
@@ -267,6 +277,7 @@ class OfferController extends Controller
                 'status' => $validatedData['status'],
                 'offer_number' => $validatedData['offer_number'],
                 'offer_date' => Carbon::parse($validatedData['offer_date']),
+                'object' => $validatedData['object'],
                 'notes' => $validatedData['notes'],
                 'total_value' => $subtotal_de_baza,
             ]);

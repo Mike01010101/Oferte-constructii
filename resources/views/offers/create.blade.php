@@ -45,6 +45,11 @@
                         <input type="date" class="form-control @error('offer_date') is-invalid @enderror" id="offer_date" name="offer_date" value="{{ old('offer_date', now()->format('Y-m-d')) }}" required>
                          @error('offer_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label for="object" class="form-label">Obiectul ofertei</label>
+                        <input type="text" class="form-control" id="object" name="object" value="{{ old('object') }}" placeholder="Ex: Renovare apartament, Construcție gard, etc.">
+                    </div>
                 </div>
             </div>
         </div>

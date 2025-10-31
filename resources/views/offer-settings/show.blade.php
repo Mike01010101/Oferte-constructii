@@ -28,7 +28,7 @@
 
                         {{-- Secțiunea pentru opțiunile de numerotare automată, controlată de JS --}}
                         <div id="auto-numbering-options">
-                            <p class="text small">Exemplu: <strong>OFC-</strong> + <strong>{{ $settings->next_number ?? 1 }}</strong> + <strong>/{{ now()->year }}</strong> = <strong>OFC-{{ $settings->next_number ?? 1 }}/{{ now()->year }}</strong></p>
+                            <p class="text small">Exemplu: <strong>AAA-</strong> + <strong>{{ $settings->next_number ?? 1 }}</strong> + <strong>/{{ now()->year }}</strong> = <strong>AAA-{{ $settings->next_number ?? 1 }}/{{ now()->year }}</strong></p>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="prefix" class="form-label">Prefix (opțional)</label>

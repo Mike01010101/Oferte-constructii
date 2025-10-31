@@ -45,6 +45,13 @@
                             @endforeach
                         </select>
                     </div>
+                    </div>
+                {{-- NOU: Câmpul pentru obiectul ofertei --}}
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label for="object" class="form-label">Obiectul ofertei</label>
+                        <input type="text" class="form-control" id="object" name="object" value="{{ old('object', $offer->object) }}" placeholder="Ex: Renovare apartament, Construcție gard, etc.">
+                    </div>
                 </div>
             </div>
         </div>

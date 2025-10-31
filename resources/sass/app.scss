@@ -436,3 +436,21 @@ html[data-theme='dark'] {
     // Folosim variabila pentru a genera și umbra la focus
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent) 25%, transparent);
 }
+/* Stil pentru sub-rândurile din căutarea de oferte
+-------------------------------------------------- */
+.offer-item-sub-row {
+    background-color: var(--element-bg-hover);
+    font-size: 0.85rem;
+
+    td {
+        border-top: none !important;
+        border-bottom: 1px solid var(--border-color);
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    mark {
+        background-color: #ffc107;
+        color: #000;
+    }
+}
