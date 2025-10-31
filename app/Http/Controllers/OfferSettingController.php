@@ -24,25 +24,34 @@ class OfferSettingController extends Controller
     {
         $company = Auth::user()->company;
 
-        // Am actualizat regulile de validare pentru a include toate opțiunile noi
         $validatedData = $request->validate([
             'numbering_mode' => ['required', Rule::in(['auto', 'manual'])],
             'prefix' => 'nullable|string|max:50',
             'start_number' => 'required_if:numbering_mode,auto|integer|min:1',
-            'show_unit_price_column' => 'sometimes|boolean',
             'vat_percentage' => 'required|numeric|min:0',
             'summary_cam_percentage' => 'nullable|numeric|min:0',
             'summary_indirect_percentage' => 'nullable|numeric|min:0',
             'summary_profit_percentage' => 'nullable|numeric|min:0',
             'pdf_price_display_mode' => ['required', Rule::in(['unit', 'total'])],
+            
+            // NOU: Regulile de validare pentru noile câmpuri
+            'material_column_name' => 'nullable|string|max:100',
+            'labor_column_name' => 'nullable|string|max:100',
+            'equipment_column_name' => 'nullable|string|max:100',
         ]);
 
-        // Tratăm manual checkbox-urile: dacă nu sunt trimise, valoarea lor va fi false
+        // Tratăm manual TOATE checkbox-urile: dacă nu sunt trimise, valoarea lor va fi false (0)
         $validatedData['show_unit_price_column'] = $request->has('show_unit_price_column');
         $validatedData['include_summary_in_prices'] = $request->has('include_summary_in_prices');
         $validatedData['show_material_column'] = $request->has('show_material_column');
         $validatedData['show_labor_column'] = $request->has('show_labor_column');
         $validatedData['show_equipment_column'] = $request->has('show_equipment_column');
+        
+        // NOU: Tratăm noile checkbox-uri pentru totaluri
+        $validatedData['show_material_total'] = $request->has('show_material_total');
+        $validatedData['show_labor_total'] = $request->has('show_labor_total');
+        $validatedData['show_equipment_total'] = $request->has('show_equipment_total');
+
 
         // Dacă opțiunea de includere în prețuri e bifată, forțăm blocul de sumar să fie ascuns
         if ($validatedData['include_summary_in_prices']) {
@@ -51,7 +60,7 @@ class OfferSettingController extends Controller
             $validatedData['show_summary_block'] = $request->has('show_summary_block');
         }
         
-        // NOUA LOGICĂ: Actualizăm numărul următor doar dacă modul este auto
+        // Actualizăm numărul următor doar dacă modul este auto
         if ($validatedData['numbering_mode'] === 'auto' && $request->has('start_number')) {
             $validatedData['next_number'] = $validatedData['start_number'];
         }

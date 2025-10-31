@@ -68,9 +68,9 @@
                                 <th style="width: 30%;">Descriere</th>
                                 <th style="width: 8%;">U.M.</th>
                                 <th style="width: 8%;">Cant.</th>
-                                @if($settings->show_material_column) <th class="price-col">Material <span class="price-mode-label">(unitar)</span></th> @endif
-                                @if($settings->show_labor_column) <th class="price-col">Manoperă <span class="price-mode-label">(unitar)</span></th> @endif
-                                @if($settings->show_equipment_column) <th class="price-col">Utilaj <span class="price-mode-label">(unitar)</span></th> @endif
+                                @if($settings->show_material_column) <th class="price-col">{{ $settings->material_column_name ?? 'Material' }} <span class="price-mode-label">(unitar)</span></th> @endif
+                                @if($settings->show_labor_column) <th class="price-col">{{ $settings->labor_column_name ?? 'Manoperă' }} <span class="price-mode-label">(unitar)</span></th> @endif
+                                @if($settings->show_equipment_column) <th class="price-col">{{ $settings->equipment_column_name ?? 'Utilaj' }} <span class="price-mode-label">(unitar)</span></th> @endif
                                 @if($settings->show_unit_price_column) <th class="price-col text-end">Preț Unitar</th> @endif
                                 <th class="price-col text-end">Total</th>
                                 <th style="width: 5%;"></th>

@@ -54,9 +54,9 @@
                                 <th>Descriere</th>
                                 <th class="text-center">U.M.</th>
                                 <th class="text-center">Cant.</th>
-                                @if($offerSettings->show_material_column) <th class="text-end">Material</th> @endif
-                                @if($offerSettings->show_labor_column) <th class="text-end">Manoperă</th> @endif
-                                @if($offerSettings->show_equipment_column) <th class="text-end">Utilaj</th> @endif
+                                @if($offerSettings->show_material_column) <th class="text-end">{{ $offerSettings->material_column_name ?? 'Material' }}</th> @endif
+                                @if($offerSettings->show_labor_column) <th class="text-end">{{ $offerSettings->labor_column_name ?? 'Manoperă' }}</th> @endif
+                                @if($offerSettings->show_equipment_column) <th class="text-end">{{ $offerSettings->equipment_column_name ?? 'Utilaj' }}</th> @endif
                                 @if($offerSettings->show_unit_price_column) <th class="text-end">Preț Unitar</th> @endif
                                 <th class="text-end">Total</th>
                             </tr>
@@ -65,15 +65,22 @@
                             @foreach ($offer->items as $item)
                                 @php
                                     $recapMultiplier = $calculations->recapMultiplier;
-                                    $displayMatPrice = $item->material_price * $recapMultiplier;
-                                    $displayLabPrice = $item->labor_price * $recapMultiplier;
-                                    $displayEqPrice = $item->equipment_price * $recapMultiplier;
-                                    $displayUnitPrice = $displayMatPrice + $displayLabPrice + $displayEqPrice;
-                                    $displayTotal = $item->quantity * $displayUnitPrice;
 
+                                    // 1. Calculăm valorile de afișare pentru fiecare coloană în parte
+                                    $displayMatPrice = $item->material_price * $recapMultiplier;
                                     $displayTotalMat = $displayMatPrice * $item->quantity;
+                                    $displayLabPrice = $item->labor_price * $recapMultiplier;
                                     $displayTotalLab = $displayLabPrice * $item->quantity;
+                                    $displayEqPrice = $item->equipment_price * $recapMultiplier;
                                     $displayTotalEq = $displayEqPrice * $item->quantity;
+
+                                    // 2. Calculăm prețul unitar și totalul pe linie DOAR cu resursele vizibile
+                                    $lineUnitPrice = 0;
+                                    if($offerSettings->show_material_column) { $lineUnitPrice += $displayMatPrice; }
+                                    if($offerSettings->show_labor_column) { $lineUnitPrice += $displayLabPrice; }
+                                    if($offerSettings->show_equipment_column) { $lineUnitPrice += $displayEqPrice; }
+                                    
+                                    $lineTotal = $item->quantity * $lineUnitPrice;
                                 @endphp
                                 <tr>
                                     <td class="text-center">{{ $loop->iteration }}</td>
@@ -91,24 +98,50 @@
                                         <td class="text-end">{{ number_format( $offerSettings->pdf_price_display_mode == 'total' ? $displayTotalEq : $displayEqPrice, 2, ',', '.') }}</td>
                                     @endif
                                     @if($offerSettings->show_unit_price_column)
-                                        <td class="text-end">{{ number_format($displayUnitPrice, 2, ',', '.') }}</td>
+                                        <td class="text-end">{{ number_format($lineUnitPrice, 2, ',', '.') }}</td>
                                     @endif
-                                    <td class="text-end fw-bold">{{ number_format($displayTotal, 2, ',', '.') }}</td>
+                                    <td class="text-end fw-bold">{{ number_format($lineTotal, 2, ',', '.') }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
+
+                        {{-- NOU: Adăugăm totalurile pe resurse în footer-ul tabelului --}}
+                        @if($offerSettings->show_material_total || $offerSettings->show_labor_total || $offerSettings->show_equipment_total)
+                        <tfoot style="background-color: var(--element-bg-hover);">
+                            <tr class="fw-bold">
+                                <td colspan="4" class="text-end">Totaluri:</td>
+                                @if($offerSettings->show_material_column)
+                                    <td class="text-end">{{ $offerSettings->show_material_total ? number_format($calculations->totalMaterial, 2, ',', '.') : '' }}</td>
+                                @endif
+                                @if($offerSettings->show_labor_column)
+                                    <td class="text-end">{{ $offerSettings->show_labor_total ? number_format($calculations->totalLabor, 2, ',', '.') : '' }}</td>
+                                @endif
+                                @if($offerSettings->show_equipment_column)
+                                    <td class="text-end">{{ $offerSettings->show_equipment_total ? number_format($calculations->totalEquipment, 2, ',', '.') : '' }}</td>
+                                @endif
+                                {{-- Adăugăm celule goale pentru a alinia corect --}}
+                                @if($offerSettings->show_unit_price_column)
+                                    <td></td>
+                                @endif
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                        @endif
                     </table>
                 </div>
             </section>
             
             <!-- Totaluri și Note / Recapitulatii -->
-            <section class="row justify-content-end">
+            <section class="row justify-content-between">
+                {{-- Coloana stângă pentru note ȘI totaluri pe resurse --}}
                 <div class="col-md-6">
                     @if($offer->notes)
                         <strong>Note:</strong>
                         <p class="text-secondary">{!! nl2br(e($offer->notes)) !!}</p>
                     @endif
+                    
                 </div>
+                {{-- Coloana dreaptă pentru totalul general --}}
                 <div class="col-md-5">
                     @if($offerSettings->show_summary_block)
                         <table class="table table-sm">

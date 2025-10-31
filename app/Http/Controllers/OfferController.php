@@ -20,7 +20,7 @@ class OfferController extends Controller
         $searchTerm = $request->input('search');
 
         $offersQuery = Auth::user()->company->offers()
-            ->with(['client', 'assignedTo'])
+            ->with(['client', 'assignedTo', 'items', 'company.offerSetting'])
             ->when($searchTerm, function ($query, $searchTerm) {
                 $query->where(function ($q) use ($searchTerm) {
                     $q->where('offer_number', 'like', "%{$searchTerm}%")
@@ -37,14 +37,34 @@ class OfferController extends Controller
             })
             ->latest();
 
-        $offers = $offersQuery->paginate(15)->appends($request->query());
+                $offers = $offersQuery->paginate(15)->appends($request->query());
 
-        // NOU: Definim variabila $users care lipsea
+        // Obținem setările o singură dată
+        $settings = Auth::user()->company->offerSetting;
+
+        // Calculăm valoarea vizibilă pentru fiecare ofertă
+        foreach ($offers as $offer) {
+            $visibleTotal = 0;
+            foreach ($offer->items as $item) {
+                $lineSubtotal = 0;
+                if ($settings && $settings->show_material_column) {
+                    $lineSubtotal += $item->material_price;
+                }
+                if ($settings && $settings->show_labor_column) {
+                    $lineSubtotal += $item->labor_price;
+                }
+                if ($settings && $settings->show_equipment_column) {
+                    $lineSubtotal += $item->equipment_price;
+                }
+                $visibleTotal += $item->quantity * $lineSubtotal;
+            }
+            // Adăugăm noua proprietate la obiectul ofertă
+            $offer->visible_total_value = $visibleTotal;
+        }
+
         $users = Auth::user()->company->users()->orderBy('name')->get();
 
         if ($request->ajax()) {
-            // Trimitem și utilizatorii la cererile AJAX, pentru ca dropdown-ul
-            // să funcționeze și după căutarea live
             return view('offers.partials.offers-table', compact('offers', 'users'))->render();
         }
 
@@ -189,6 +209,7 @@ class OfferController extends Controller
             'items.*.description' => 'required|string',
             'items.*.quantity' => 'required|numeric|min:0',
             'items.*.unit_measure' => 'required|string|max:20',
+            // Validăm prețurile doar dacă sunt trimise (vor fi trimise și cu valoarea 0)
             'items.*.material_price' => 'nullable|numeric|min:0',
             'items.*.labor_price' => 'nullable|numeric|min:0',
             'items.*.equipment_price' => 'nullable|numeric|min:0',
@@ -197,11 +218,47 @@ class OfferController extends Controller
         try {
             DB::beginTransaction();
             
+            // Obținem setările curente ale companiei
+            $settings = Auth::user()->company->offerSetting;
             $items = $request->input('items', []);
+
+            // Încărcăm articolele vechi într-un format ușor de accesat (keyed by description or a unique key if available)
+            // Pentru simplitate, vom folosi un array simplu și îl vom parcurge
+            $oldItems = $offer->items;
+
             $subtotal_de_baza = 0;
-            foreach ($items as $item) {
-                $lineTotal = ($item['material_price'] ?? 0) + ($item['labor_price'] ?? 0) + ($item['equipment_price'] ?? 0);
-                $subtotal_de_baza += ($item['quantity'] ?? 0) * $lineTotal;
+            $newItemsData = [];
+
+            foreach ($items as $index => $item) {
+                // Încercăm să găsim un articol vechi corespunzător. Această logică poate fi îmbunătățită
+                // dacă ai un ID ascuns pentru fiecare articol în formular.
+                $oldItem = $oldItems->get($index); // Presupunem că ordinea se păstrează
+
+                $newItemData = [
+                    'description' => $item['description'],
+                    'quantity' => $item['quantity'],
+                    'unit_measure' => $item['unit_measure'],
+                ];
+
+                // Păstrăm valorile vechi pentru câmpurile care nu sunt afișate/trimise
+                $newItemData['material_price'] = $settings->show_material_column 
+                    ? ($item['material_price'] ?? 0) 
+                    : ($oldItem->material_price ?? 0);
+
+                $newItemData['labor_price'] = $settings->show_labor_column 
+                    ? ($item['labor_price'] ?? 0) 
+                    : ($oldItem->labor_price ?? 0);
+
+                $newItemData['equipment_price'] = $settings->show_equipment_column 
+                    ? ($item['equipment_price'] ?? 0) 
+                    : ($oldItem->equipment_price ?? 0);
+                
+                // Calculăm totalul liniei pe baza tuturor valorilor (vechi + noi)
+                $lineTotalValue = $newItemData['material_price'] + $newItemData['labor_price'] + $newItemData['equipment_price'];
+                $newItemData['total'] = $newItemData['quantity'] * $lineTotalValue;
+                
+                $subtotal_de_baza += $newItemData['total'];
+                $newItemsData[] = $newItemData;
             }
 
             $offer->update([
@@ -211,13 +268,11 @@ class OfferController extends Controller
                 'offer_number' => $validatedData['offer_number'],
                 'offer_date' => Carbon::parse($validatedData['offer_date']),
                 'notes' => $validatedData['notes'],
-                'total_value' => $subtotal_de_baza, // Salvăm MEREU subtotalul de bază
+                'total_value' => $subtotal_de_baza,
             ]);
 
             $offer->items()->delete();
-            foreach ($items as $itemData) {
-                 $lineTotalValue = ($itemData['material_price'] ?? 0) + ($itemData['labor_price'] ?? 0) + ($itemData['equipment_price'] ?? 0);
-                 $itemData['total'] = ($itemData['quantity'] ?? 0) * $lineTotalValue;
+            foreach ($newItemsData as $itemData) {
                  $offer->items()->create($itemData);
             }
 

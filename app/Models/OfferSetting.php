@@ -27,6 +27,12 @@ class OfferSetting extends Model
         'summary_indirect_percentage',
         'summary_profit_percentage',
         'include_summary_in_prices',
-        'pdf_price_display_mode'
+        'pdf_price_display_mode',
+        'material_column_name',
+        'labor_column_name',
+        'equipment_column_name',
+        'show_material_total',
+        'show_labor_total',
+        'show_equipment_total',
     ];
 }

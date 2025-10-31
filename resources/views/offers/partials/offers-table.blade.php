@@ -44,7 +44,7 @@
                             </div>
                         </td>
                             <td>{{ \Carbon\Carbon::parse($offer->offer_date)->format('d.m.Y') }}</td>
-                            <td class="text-end">{{ number_format($offer->total_value, 2, ',', '.') }} RON</td>
+                            <td class="text-end">{{ number_format($offer->visible_total_value, 2, ',', '.') }} RON</td>
                             <td class="status-cell" id="status-cell-{{ $offer->id }}">
                                 <div class="dropdown">
                                     <a class="badge {{ $offer->getStatusColorClass() }} dropdown-toggle text-decoration-none" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">

@@ -75,23 +75,48 @@
             </div>
 
             <div class="col-lg-5">
-                <!-- Card Coloane și TVA -->
+                                <!-- Card Coloane și TVA -->
                 <div class="card">
-                    <div class="card-header">Afișare Coloane și TVA</div>
+                    <div class="card-header">Afișare Coloane, Totaluri și TVA</div>
                     <div class="card-body">
-                        <label class="form-label fw-bold">Coloane resurse vizibile</label>
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" role="switch" id="show_material_column" name="show_material_column" value="1" {{ old('show_material_column', $settings->show_material_column ?? true) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="show_material_column">Material</label>
+                        <label class="form-label fw-bold">Configurare coloane resurse</label>
+
+                        {{-- Material --}}
+                        <div class="input-group mb-2">
+                            <div class="input-group-text">
+                                <input class="form-check-input mt-0" type="checkbox" role="switch" id="show_material_column" name="show_material_column" value="1" {{ old('show_material_column', $settings->show_material_column ?? true) ? 'checked' : '' }}>
+                            </div>
+                            <input type="text" class="form-control" name="material_column_name" value="{{ old('material_column_name', $settings->material_column_name ?? 'Material') }}" placeholder="Nume coloană">
                         </div>
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" role="switch" id="show_labor_column" name="show_labor_column" value="1" {{ old('show_labor_column', $settings->show_labor_column ?? true) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="show_labor_column">Manoperă</label>
+                        <div class="form-check form-switch mb-3 ms-4">
+                             <input class="form-check-input" type="checkbox" role="switch" id="show_material_total" name="show_material_total" value="1" {{ old('show_material_total', $settings->show_material_total ?? false) ? 'checked' : '' }}>
+                             <label class="form-check-label small" for="show_material_total">Afișează total pe ofertă</label>
                         </div>
-                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" id="show_equipment_column" name="show_equipment_column" value="1" {{ old('show_equipment_column', $settings->show_equipment_column ?? true) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="show_equipment_column">Utilaj</label>
+
+                        {{-- Manoperă --}}
+                        <div class="input-group mb-2">
+                            <div class="input-group-text">
+                                <input class="form-check-input mt-0" type="checkbox" role="switch" id="show_labor_column" name="show_labor_column" value="1" {{ old('show_labor_column', $settings->show_labor_column ?? true) ? 'checked' : '' }}>
+                            </div>
+                            <input type="text" class="form-control" name="labor_column_name" value="{{ old('labor_column_name', $settings->labor_column_name ?? 'Manoperă') }}" placeholder="Nume coloană">
                         </div>
+                        <div class="form-check form-switch mb-3 ms-4">
+                             <input class="form-check-input" type="checkbox" role="switch" id="show_labor_total" name="show_labor_total" value="1" {{ old('show_labor_total', $settings->show_labor_total ?? false) ? 'checked' : '' }}>
+                             <label class="form-check-label small" for="show_labor_total">Afișează total pe ofertă</label>
+                        </div>
+                        
+                        {{-- Utilaj --}}
+                        <div class="input-group mb-2">
+                            <div class="input-group-text">
+                                <input class="form-check-input mt-0" type="checkbox" role="switch" id="show_equipment_column" name="show_equipment_column" value="1" {{ old('show_equipment_column', $settings->show_equipment_column ?? true) ? 'checked' : '' }}>
+                            </div>
+                            <input type="text" class="form-control" name="equipment_column_name" value="{{ old('equipment_column_name', $settings->equipment_column_name ?? 'Utilaj') }}" placeholder="Nume coloană">
+                        </div>
+                        <div class="form-check form-switch mb-3 ms-4">
+                             <input class="form-check-input" type="checkbox" role="switch" id="show_equipment_total" name="show_equipment_total" value="1" {{ old('show_equipment_total', $settings->show_equipment_total ?? false) ? 'checked' : '' }}>
+                             <label class="form-check-label small" for="show_equipment_total">Afișează total pe ofertă</label>
+                        </div>
+
                         <hr>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" role="switch" id="show_unit_price_column" name="show_unit_price_column" value="1" {{ old('show_unit_price_column', $settings->show_unit_price_column ?? false) ? 'checked' : '' }}>

@@ -20,6 +20,10 @@ class OfferCalculationService
     public float $vatValue = 0;
     public float $grandTotal = 0;
 
+    public float $totalMaterial = 0;
+    public float $totalLabor = 0;
+    public float $totalEquipment = 0;
+
     public function __construct(Offer $offer)
     {
         $this->offer = $offer;
@@ -30,29 +34,66 @@ class OfferCalculationService
 
     private function calculate(): void
     {
-        $this->baseSubtotal = $this->offer->total_value;
-
-        // Calculăm totalurile pe resurse, necesare pentru CAM și alte calcule
+        // --- Pasul 1: Calculăm multiplicatorul de recapitulatie (dacă există) ---
+        $fullBaseSubtotal = $this->offer->total_value;
         $totalBaseLabor = 0;
         foreach ($this->offer->items as $item) {
             $totalBaseLabor += $item->quantity * $item->labor_price;
         }
 
-        // --- Calculăm valorile de recapitulatie ---
         $this->camValue = $totalBaseLabor * ($this->settings->summary_cam_percentage / 100);
-        $totalPlusCam = $this->baseSubtotal + $this->camValue;
+        $totalPlusCam = $fullBaseSubtotal + $this->camValue;
         $this->indirectValue = $totalPlusCam * ($this->settings->summary_indirect_percentage / 100);
         $totalPlusIndirect = $totalPlusCam + $this->indirectValue;
         $this->profitValue = $totalPlusIndirect * ($this->settings->summary_profit_percentage / 100);
 
-        // --- Stabilim totalurile finale ---
         if ($this->settings->include_summary_in_prices) {
             $totalRecap = $this->camValue + $this->indirectValue + $this->profitValue;
-            if ($this->baseSubtotal > 0) {
-                $this->recapMultiplier = 1 + ($totalRecap / $this->baseSubtotal);
+            if ($fullBaseSubtotal > 0) {
+                $this->recapMultiplier = 1 + ($totalRecap / $fullBaseSubtotal);
             }
-            $this->totalWithoutVat = $this->baseSubtotal * $this->recapMultiplier;
+        }
+
+        // --- Pasul 2: Resetăm și calculăm totalurile finale, aplicând multiplicatorul ---
+        $this->baseSubtotal = 0;
+        $this->totalMaterial = 0;
+        $this->totalLabor = 0;
+        $this->totalEquipment = 0;
+
+        foreach ($this->offer->items as $item) {
+            // Aplicăm multiplicatorul pe fiecare resursă
+            $adjMaterialPrice = $item->material_price * $this->recapMultiplier;
+            $adjLaborPrice = $item->labor_price * $this->recapMultiplier;
+            $adjEquipmentPrice = $item->equipment_price * $this->recapMultiplier;
+
+            // Calculăm totalurile pe linie pentru fiecare resursă, cu prețurile ajustate
+            $lineMaterialTotal = $item->quantity * $adjMaterialPrice;
+            $lineLaborTotal = $item->quantity * $adjLaborPrice;
+            $lineEquipmentTotal = $item->quantity * $adjEquipmentPrice;
+
+            // Adunăm la totalurile generale pe resurse (acestea vor include acum recapitulatiile)
+            $this->totalMaterial += $lineMaterialTotal;
+            $this->totalLabor += $lineLaborTotal;
+            $this->totalEquipment += $lineEquipmentTotal;
+
+            // Adunăm la subtotalul vizibil doar resursele active
+            if ($this->settings->show_material_column) {
+                $this->baseSubtotal += $lineMaterialTotal;
+            }
+            if ($this->settings->show_labor_column) {
+                $this->baseSubtotal += $lineLaborTotal;
+            }
+            if ($this->settings->show_equipment_column) {
+                $this->baseSubtotal += $lineEquipmentTotal;
+            }
+        }
+
+        // --- Pasul 3: Stabilim totalurile finale ale ofertei ---
+        if ($this->settings->include_summary_in_prices) {
+            // Dacă recapitulatiile sunt incluse, subtotalul vizibil este direct totalul fără tva
+            $this->totalWithoutVat = $this->baseSubtotal;
         } else {
+            // Altfel, adunăm recapitulatiile la subtotalul vizibil
             $this->totalWithoutVat = $this->baseSubtotal + $this->camValue + $this->indirectValue + $this->profitValue;
         }
 
