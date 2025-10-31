@@ -33,33 +33,38 @@ class CalculationService
 
     private function calculate(): void
     {
-        // Pasul 1: Calculăm ÎNTOTDEAUNA valorile de recapitulatie
-        $fullBaseSubtotal = 0;
-        $totalBaseLabor = 0;
+        // Pasul 1: Resetăm totul și inițializăm
+        $this->recapMultiplier = 1.0;
+        $this->camValue = 0;
+        $this->indirectValue = 0;
+        $this->profitValue = 0;
         
-        foreach ($this->model->items as $item) {
-            $fullBaseSubtotal += $item->quantity * ($item->material_price + $item->labor_price + $item->equipment_price);
-            $totalBaseLabor += $item->quantity * $item->labor_price;
-        }
-
-        $this->camValue = $totalBaseLabor * ($this->settings->summary_cam_percentage / 100);
-        $totalPlusCam = $fullBaseSubtotal + $this->camValue;
-        $this->indirectValue = $totalPlusCam * ($this->settings->summary_indirect_percentage / 100);
-        $totalPlusIndirect = $totalPlusCam + $this->indirectValue;
-        $this->profitValue = $totalPlusIndirect * ($this->settings->summary_profit_percentage / 100);
-        
-        // Pasul 2: Determinăm multiplicatorul DOAR dacă opțiunea este bifată
-        if ($this->settings->include_summary_in_prices) {
-            $totalRecap = $this->camValue + $this->indirectValue + $this->profitValue;
-            if ($fullBaseSubtotal > 0) {
-                $this->recapMultiplier = 1 + ($totalRecap / $fullBaseSubtotal);
+        // Pasul 2: Calculăm valorile de recapitulatie DOAR dacă este necesar
+        if ($this->settings->include_summary_in_prices || $this->settings->show_summary_block) {
+            $fullBaseSubtotal = 0;
+            $totalBaseLabor = 0;
+            
+            foreach ($this->model->items as $item) {
+                $fullBaseSubtotal += $item->quantity * ($item->material_price + $item->labor_price + $item->equipment_price);
+                $totalBaseLabor += $item->quantity * $item->labor_price;
             }
-        } else {
-            // Dacă opțiunea nu e bifată, multiplicatorul este 1 (nu afectează prețurile)
-            $this->recapMultiplier = 1.0;
+
+            $this->camValue = $totalBaseLabor * ($this->settings->summary_cam_percentage / 100);
+            $totalPlusCam = $fullBaseSubtotal + $this->camValue;
+            $this->indirectValue = $totalPlusCam * ($this->settings->summary_indirect_percentage / 100);
+            $totalPlusIndirect = $totalPlusCam + $this->indirectValue;
+            $this->profitValue = $totalPlusIndirect * ($this->settings->summary_profit_percentage / 100);
+            
+            // Setăm multiplicatorul DOAR dacă opțiunea de includere este bifată
+            if ($this->settings->include_summary_in_prices) {
+                $totalRecap = $this->camValue + $this->indirectValue + $this->profitValue;
+                if ($fullBaseSubtotal > 0) {
+                    $this->recapMultiplier = 1 + ($totalRecap / $fullBaseSubtotal);
+                }
+            }
         }
 
-        // Pasul 3: Calculăm totalurile afișate, aplicând multiplicatorul (care este 1 dacă opțiunea e debifată)
+        // Pasul 3: Calculăm totalurile afișate, aplicând multiplicatorul (care va fi 1.0 dacă opțiunea e debifată)
         $this->baseSubtotal = 0;
         $this->totalMaterial = 0;
         $this->totalLabor = 0;
@@ -82,9 +87,14 @@ class CalculationService
         // Pasul 4: Calculăm totalurile finale ale documentului
         if ($this->settings->include_summary_in_prices) {
             $this->totalWithoutVat = $this->baseSubtotal;
-        } else {
-            // Acum, când opțiunea e debifată, adunăm valorile CAM, etc., care au fost calculate la Pasul 1
+        } 
+        // Adunăm recapitulatiile doar dacă opțiunea de afișare a blocului este bifată
+        elseif ($this->settings->show_summary_block) {
             $this->totalWithoutVat = $this->baseSubtotal + $this->camValue + $this->indirectValue + $this->profitValue;
+        } 
+        // Cazul tău: ambele opțiuni sunt debifate
+        else {
+            $this->totalWithoutVat = $this->baseSubtotal;
         }
 
         $this->vatValue = $this->totalWithoutVat * ($this->settings->vat_percentage / 100);
