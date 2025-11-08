@@ -99,9 +99,9 @@ document.addEventListener('DOMContentLoaded', function () {
         row.classList.add('offer-item-row');
         let priceCells = '';
         
-        if (settings.showMaterial) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible material-price-visible" step="0.01" value="0.00"></td>`;
-        if (settings.showLabor) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible labor-price-visible" step="0.01" value="0.00"></td>`;
-        if (settings.showEquipment) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible equipment-price-visible" step="0.01" value="0.00"></td>`;
+        if (settings.showMaterial) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible material-price-visible" step="any" value="0.00"></td>`;
+        if (settings.showLabor) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible labor-price-visible" step="any" value="0.00"></td>`;
+        if (settings.showEquipment) priceCells += `<td><input type="number" class="form-control form-control-sm price-input-visible equipment-price-visible" step="any" value="0.00"></td>`;
         
         let hiddenPriceInputs = `
             <input type="hidden" name="items[${itemIndex}][material_price]" class="price-input-hidden material-price-hidden" value="0.00">
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 ${hiddenPriceInputs}
             </td>
             <td><input type="text" name="items[${itemIndex}][unit_measure]" class="form-control form-control-sm" value="buc" required></td>
-            <td><input type="number" name="items[${itemIndex}][quantity]" class="form-control form-control-sm quantity" step="0.01" value="1" required></td>
+            <td><input type="number" name="items[${itemIndex}][quantity]" class="form-control form-control-sm quantity" step="any" value="1" required></td>
             ${priceCells}
             <td class="text-end align-middle line-total">0.00</td>
             <td><button type="button" class="btn btn-sm btn-danger remove-item-btn">X</button></td>
@@ -135,7 +135,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const newLabel = isTotalMode() ? '(total)' : '(unitar)';
         priceModeLabels.forEach(label => label.textContent = newLabel);
         
-        // NOUA LOGICĂ: Recalculăm ce se afișează în input-uri la comutare
         document.querySelectorAll('.offer-item-row').forEach(row => {
             const qty = parseFloat(row.querySelector('.quantity').value) || 0;
             const unitMaterial = parseFloat(row.querySelector('.material-price-hidden').value) || 0;
@@ -147,15 +146,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const equipmentInput = row.querySelector('.equipment-price-visible');
 
             if (isTotalMode()) {
-                // Comutăm pe modul TOTAL: afișăm valoarea totală (unitar * cantitate)
-                if (materialInput) materialInput.value = (unitMaterial * qty).toFixed(2);
-                if (laborInput) laborInput.value = (unitLabor * qty).toFixed(2);
-                if (equipmentInput) equipmentInput.value = (unitEquipment * qty).toFixed(2);
+                if (materialInput) materialInput.value = (unitMaterial * qty).toFixed(4);
+                if (laborInput) laborInput.value = (unitLabor * qty).toFixed(4);
+                if (equipmentInput) equipmentInput.value = (unitEquipment * qty).toFixed(4);
             } else {
-                // Comutăm pe modul UNITAR: afișăm valoarea unitară
-                if (materialInput) materialInput.value = unitMaterial.toFixed(2);
-                if (laborInput) laborInput.value = unitLabor.toFixed(2);
-                if (equipmentInput) equipmentInput.value = unitEquipment.toFixed(2);
+                if (materialInput) materialInput.value = unitMaterial.toFixed(4);
+                if (laborInput) laborInput.value = unitLabor.toFixed(4);
+                if (equipmentInput) equipmentInput.value = unitEquipment.toFixed(4);
             }
         });
 
@@ -183,18 +180,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 unitEquipment = equipmentValue;
             }
 
-            if(row.querySelector('.material-price-hidden')) row.querySelector('.material-price-hidden').value = unitMaterial.toFixed(2);
-            if(row.querySelector('.labor-price-hidden')) row.querySelector('.labor-price-hidden').value = unitLabor.toFixed(2);
-            if(row.querySelector('.equipment-price-hidden')) row.querySelector('.equipment-price-hidden').value = unitEquipment.toFixed(2);
+            if(row.querySelector('.material-price-hidden')) row.querySelector('.material-price-hidden').value = unitMaterial.toFixed(4);
+            if(row.querySelector('.labor-price-hidden')) row.querySelector('.labor-price-hidden').value = unitLabor.toFixed(4);
+            if(row.querySelector('.equipment-price-hidden')) row.querySelector('.equipment-price-hidden').value = unitEquipment.toFixed(4);
             
             const unitPriceTotal = unitMaterial + unitLabor + unitEquipment;
             const lineTotal = qty * unitPriceTotal;
 
-            if (settings.showUnitPrice) row.querySelector('.unit-price-total').textContent = unitPriceTotal.toFixed(2);
-            row.querySelector('.line-total').textContent = lineTotal.toFixed(2);
+            if (settings.showUnitPrice) row.querySelector('.unit-price-total').textContent = unitPriceTotal.toFixed(4);
+            row.querySelector('.line-total').textContent = lineTotal.toFixed(4);
             grandTotal += lineTotal;
         });
-        grandTotalElem.textContent = grandTotal.toFixed(2) + ' RON';
+        grandTotalElem.textContent = grandTotal.toFixed(4) + ' RON';
     }
     
     function updatePriceModeLabels() {
@@ -234,15 +231,15 @@ document.addEventListener('DOMContentLoaded', function () {
     
     addBtn.addEventListener('click', addRow);
     
-    // Pentru pagina de editare, trebuie să pre-populăm rândurile existente
     if (tbody.children.length > 0) {
         itemIndex = tbody.children.length;
         document.querySelectorAll('.offer-item-row').forEach(row => {
             updateEventListenersForRow(row);
         });
         updateCalculations();
+        // NOU: Rulăm togglePriceMode() la încărcare pentru a afișa valorile corect conform modului selectat
+        togglePriceMode();
     } else {
-        // Pentru pagina de creare, adăugăm primul rând
         addRow();
     }
 });

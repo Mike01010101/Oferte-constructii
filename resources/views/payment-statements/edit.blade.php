@@ -1,26 +1,15 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Creează Situație de Plată')
+@section('title', 'Editează Situație de Plată')
 
 @section('content')
 <div class="container-fluid">
     <h1 class="h3 mb-4">Editează situație de plată pentru Oferta: {{ $offer->offer_number }}</h1>
 
-    <form method="POST" action="{{ route('situatii-plata.update', $statement->id) }}">
+    <form method="POST" action="{{ route('oferte.situatii-plata.update', ['offer' => $offer, 'statement' => $statement]) }}">
         @csrf
         @method('PUT')
-        <input type="hidden" name="offer_id" value="{{ $offer->id }}">
         
-        {{-- Aici vom folosi o structură similară cu offers.edit, dar adaptată --}}
-        {{-- Poți copia conținutul din `offers/edit.blade.php` și să faci următoarele modificări: --}}
-        {{-- 1. Schimbă acțiunea formularului la `route('situatii-plata.store')` --}}
-        {{-- 2. Înlocuiește variabilele `$offer->` cu `$statement->` pentru câmpurile de bază (număr, dată, obiect, note) --}}
-        {{-- 3. Câmpul `status` și `assigned_to` nu mai sunt necesare. --}}
-        {{-- 4. În bucla de itemi, folosește `$items` în loc de `$offer->items` --}}
-        {{-- 5. Schimbă textul butonului de submit în "Salvează Situația de Plată" --}}
-
-        {{-- Pentru a merge mai repede, folosește direct codul de mai jos --}}
-
         <div class="card">
             <div class="card-header">Detalii Situație de Plată</div>
             <div class="card-body">
@@ -51,7 +40,6 @@
             </div>
         </div>
         
-        {{-- Aici urmează cardul cu itemii, exact ca în offers.edit --}}
         @include('offers.partials.items-table', ['items' => $items, 'settings' => $settings])
 
         <div class="card mt-4">
@@ -62,8 +50,8 @@
         </div>
 
         <div class="mt-4">
-            <button type="submit" class="btn btn-primary">Salvează Situația de Plată</button>
-            <a href="{{ route('oferte.index') }}" class="btn btn-secondary">Anulează</a>
+            <button type="submit" class="btn btn-primary">Salvează Modificările</button>
+            <a href="{{ route('oferte.situatii-plata.index', $offer) }}" class="btn btn-secondary">Anulează</a>
         </div>
     </form>
 </div>

@@ -837,92 +837,69 @@ function handleCuiApiSearch() {
 
 // NOU: Funcția care desenează graficele de pe pagina de rapoarte
 function handleReportCharts() {
-    // Folosim setTimeout cu 0ms pentru a împinge execuția la următorul "tick" al browser-ului.
-    // Asta garantează că DOM-ul este complet randat și dimensionat înainte de a încerca să desenăm.
-    setTimeout(() => {
-        // PASUL 1: Distrugem orice instanță de grafic existentă pentru a preveni conflictele
-        activeCharts.forEach(chart => chart.destroy());
-        activeCharts = []; // Resetăm array-ul
+    const reportsDataElement = document.getElementById('reports-data');
+    if (!reportsDataElement) {
+        return; // Nu suntem pe pagina de rapoarte
+    }
 
-        const reportsDataElement = document.getElementById('reports-data');
-        if (!reportsDataElement) {
-            return;
-        }
+    // Distrugem graficele vechi pentru a preveni suprapunerea
+    activeCharts.forEach(chart => chart.destroy());
+    activeCharts = [];
 
-        const data = JSON.parse(reportsDataElement.innerHTML);
+    const data = JSON.parse(reportsDataElement.innerHTML);
 
-        // Citim culorile temei direct din CSS
-        const themeStyles = getComputedStyle(document.documentElement);
-        const textColor = themeStyles.getPropertyValue('--text-secondary').trim();
-        const borderColor = themeStyles.getPropertyValue('--border-color').trim();
-        const primaryAccentColor = themeStyles.getPropertyValue('--primary-accent').trim();
+    // Citim culorile temei
+    const style = getComputedStyle(document.body);
+    const successColor = style.getPropertyValue('--bs-success').trim();
+    const infoColor = style.getPropertyValue('--bs-info').trim();
+    const dangerColor = style.getPropertyValue('--bs-danger').trim();
+    const secondaryColor = style.getPropertyValue('--bs-secondary').trim();
+    const gridColor = 'rgba(255, 255, 255, 0.1)';
+    const textColor = 'rgba(255, 255, 255, 0.7)';
+    const bodyBgColor = style.getPropertyValue('--bs-body-bg').trim();
 
-        const statusColors = {
-            'Draft': '#6c757d', 'Trimisa': '#0dcaf0', 'Acceptata': '#198754',
-            'Respinsa': '#dc3545', 'Anulata': '#adb5bd', 'Facturata': '#0d6efd',
-            'Incasata': '#ffc107', 'Negociere': '#fd7e14'
-        };
-        
-        // --- GRAFIC 1: STATUSURI (DONUT) ---
-        const statusCtx = document.getElementById('statusDonutChart');
-        if (statusCtx) {
-            const statusLabels = Object.keys(data.statusDistribution);
-            if(statusLabels.length > 0) {
-                const statusChart = new Chart(statusCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: statusLabels,
-                        datasets: [{
-                            label: 'Nr. Oferte', data: Object.values(data.statusDistribution),
-                            backgroundColor: statusLabels.map(label => statusColors[label] || '#cccccc'),
-                            borderColor: themeStyles.getPropertyValue('--element-bg').trim(), borderWidth: 3
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, height: 250, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
-                });
-                activeCharts.push(statusChart);
+    // --- GRAFIC 1: STATUSURI ---
+    const statusCtx = document.getElementById('statusDonutChart')?.getContext('2d');
+    if (statusCtx) {
+        const statusLabels = Object.keys(data.statusDistribution);
+        const statusData = Object.values(data.statusDistribution);
+        const statusColors = statusLabels.map(status => {
+            switch(status) {
+                case 'Acceptata': case 'Incasata': case 'Facturata': case 'Finalizata': return successColor;
+                case 'Trimisa': case 'In lucru': return infoColor;
+                case 'Anulata': case 'Respinsa': return dangerColor;
+                default: return secondaryColor;
             }
-        }
+        });
+        const statusChart = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: { labels: statusLabels, datasets: [{ data: statusData, backgroundColor: statusColors, borderColor: bodyBgColor, borderWidth: 2 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
+        });
+        activeCharts.push(statusChart);
+    }
 
-        // --- GRAFIC 2: VALORI LUNARE (BAR) ---
-        const monthlyCtx = document.getElementById('monthlyValuesBarChart');
-        if (monthlyCtx) {
-            if(Object.keys(data.monthlyChartData).length > 0) {
-                const monthlyChart = new Chart(monthlyCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(data.monthlyChartData),
-                        datasets: [{
-                            label: 'Valoare totală (RON)', data: Object.values(data.monthlyChartData),
-                            backgroundColor: primaryAccentColor + '80', borderColor: primaryAccentColor,
-                            borderWidth: 1, borderRadius: 4
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, height: 250, ticks: { color: textColor }, grid: { color: borderColor } }, x: { ticks: { color: textColor }, grid: { color: 'transparent' } } }, plugins: { legend: { display: false } } }
-                });
-                activeCharts.push(monthlyChart);
-            }
-        }
+    // --- GRAFIC 2: VALORI LUNARE ---
+    const monthlyCtx = document.getElementById('monthlyValuesBarChart')?.getContext('2d');
+    if (monthlyCtx) {
+        const monthlyChart = new Chart(monthlyCtx, {
+            type: 'bar',
+            data: { labels: Object.keys(data.monthlyChartData), datasets: [{ label: 'Valoare lunară', data: Object.values(data.monthlyChartData), backgroundColor: 'rgba(220, 53, 69, 0.7)', borderColor: dangerColor, borderWidth: 1 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: gridColor } }, x: { ticks: { color: textColor }, grid: { color: gridColor } } } }
+        });
+        activeCharts.push(monthlyChart);
+    }
 
-        // --- GRAFIC 3: TOP CLIENTI (BARA ORIZONTALA) ---
-        const clientsCtx = document.getElementById('topClientsChart');
-        if (clientsCtx) {
-            if(Object.keys(data.topClients).length > 0) {
-                const clientsChart = new Chart(clientsCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(data.topClients),
-                        datasets: [{
-                            label: 'Valoare totală oferte (RON)', data: Object.values(data.topClients),
-                            backgroundColor: primaryAccentColor + '80', borderColor: primaryAccentColor, borderWidth: 1
-                        }]
-                    },
-                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, height: 250, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { color: textColor }, grid: { color: borderColor } }, y: { ticks: { color: textColor }, grid: { color: 'transparent' } } } }
-                });
-                activeCharts.push(clientsChart);
-            }
-        }
-    }, 0);
+    // --- GRAFIC 3: TOP CLIENTI ---
+    const clientsCtx = document.getElementById('topClientsChart')?.getContext('2d');
+    if (clientsCtx) {
+        const clientsChart = new Chart(clientsCtx, {
+            type: 'bar',
+            data: { labels: Object.keys(data.topClients), datasets: [{ label: 'Valoare totală', data: Object.values(data.topClients), backgroundColor: 'rgba(220, 53, 69, 0.7)', borderColor: dangerColor, borderWidth: 1 }] },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { color: textColor }, grid: { color: gridColor } }, y: { ticks: { color: textColor }, grid: { color: gridColor } } } }
+        });
+        activeCharts.push(clientsChart);
+    }
 }
 
 function handleMobileMenuNavigation() {
@@ -978,12 +955,16 @@ const swup = new Swup({
     cache: false
 });
 
-// NOU: Hook pentru a curăța elementele Bootstrap înainte de tranziție
+// Hook care rulează CHIAR ÎNAINTE ca Swup să înceapă tranziția
 swup.hooks.on('visit:start', () => {
+    // --- NOU: Închidem meniul de mobil dacă este deschis ---
+    if (document.body.classList.contains('sidebar-open')) {
+        document.body.classList.remove('sidebar-open');
+    }
+
     // Închidem orice modal deschis
     const openModal = document.querySelector('.modal.show');
     if (openModal) {
-        // Obținem instanța Bootstrap și o închidem corect
         const modalInstance = bootstrap.Modal.getInstance(openModal);
         if (modalInstance) {
             modalInstance.hide();
@@ -991,7 +972,6 @@ swup.hooks.on('visit:start', () => {
     }
     // Ștergem fundalul semi-transparent dacă a rămas blocat
     document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
-    // Scoatem clasa de pe body
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';

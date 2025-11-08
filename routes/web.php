@@ -25,13 +25,16 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('oferte', App\Http\Controllers\OfferController::class);
     Route::get('/oferte/{oferte}/pdf', [App\Http\Controllers\OfferController::class, 'downloadPDF'])->name('oferte.pdf');
 
-    Route::get('/situatii-plata', [App\Http\Controllers\PaymentStatementController::class, 'index'])->name('situatii-plata.index');
-    Route::get('/oferte/{offer}/creeaza-situatie-plata', [App\Http\Controllers\PaymentStatementController::class, 'create'])->name('situatii-plata.create');
-    Route::post('/situatii-plata', [App\Http\Controllers\PaymentStatementController::class, 'store'])->name('situatii-plata.store');
-    Route::get('/situatii-plata/{statement}/editeaza', [App\Http\Controllers\PaymentStatementController::class, 'edit'])->name('situatii-plata.edit');
-    Route::put('/situatii-plata/{statement}', [App\Http\Controllers\PaymentStatementController::class, 'update'])->name('situatii-plata.update');
-    Route::get('/situatii-plata/{statement}/pdf', [App\Http\Controllers\PaymentStatementController::class, 'downloadPDF'])->name('situatii-plata.pdf');
-    Route::delete('/situatii-plata/{statement}', [App\Http\Controllers\PaymentStatementController::class, 'destroy'])->name('situatii-plata.destroy');
+    // Grup de rute pentru situațiile de plată asociate unei oferte
+    Route::prefix('oferte/{offer}/situatii-plata')->name('oferte.situatii-plata.')->group(function () {
+    Route::get('/', [App\Http\Controllers\PaymentStatementController::class, 'index'])->name('index');
+    Route::get('/creeaza', [App\Http\Controllers\PaymentStatementController::class, 'create'])->name('create');
+    Route::post('/', [App\Http\Controllers\PaymentStatementController::class, 'store'])->name('store');
+    Route::get('/{statement}/editeaza', [App\Http\Controllers\PaymentStatementController::class, 'edit'])->name('edit');
+    Route::put('/{statement}', [App\Http\Controllers\PaymentStatementController::class, 'update'])->name('update');
+    Route::get('/{statement}/pdf', [App\Http\Controllers\PaymentStatementController::class, 'downloadPDF'])->name('pdf');
+    Route::delete('/{statement}', [App\Http\Controllers\PaymentStatementController::class, 'destroy'])->name('destroy');
+    });
 
     Route::get('/rapoarte', [App\Http\Controllers\ReportController::class, 'index'])->name('rapoarte.index');
 

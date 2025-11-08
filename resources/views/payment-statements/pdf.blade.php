@@ -86,7 +86,7 @@
              @if ($companyProfile && $companyProfile->logo_path)
                 <img src="{{ public_path('storage/' . $companyProfile->logo_path) }}" alt="Logo" style="max-height: 80px; margin-bottom: 1rem;">
             @endif
-            <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ</h2>
+            <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ NR. {{ $statementIndex ?? '' }}</h2>
             <p style="font-size: 11px; margin: 0;">
                 <strong>Nr:</strong> {{ $statement->statement_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($statement->statement_date)->format('d.m.Y') }}
             </p>
@@ -135,7 +135,7 @@
         </td>
         <!-- Partea dreaptă: Titlu Ofertă -->
         <td class="border-0 text-end" style="width: 30%; vertical-align: top;">
-        <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ</h2>
+        <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ NR. {{ $statementIndex ?? '' }}</h2>
             <p style="font-size: 11px; margin: 0;">
                 <strong>Nr:</strong> {{ $statement->statement_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($statement->statement_date)->format('d.m.Y') }}
             </p>
@@ -152,7 +152,7 @@
         <!-- NOU: Antet - Layout Elegant -->
         @if ($layout == 'elegant')
         <div class="mb-4 text-end">
-         <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ</h2>
+         <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ NR. {{ $statementIndex ?? '' }}</h2>
             <p style="font-size: 11px; margin: 0;">
                 <strong>Nr:</strong> {{ $statement->statement_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($statement->statement_date)->format('d.m.Y') }}
             </p>
@@ -181,7 +181,7 @@
         <table class="border-0 mb-4">
             <tr>
                 <td class="border-0">
-                 <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ</h2>
+                 <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ NR. {{ $statementIndex ?? '' }}</h2>
             <p style="font-size: 11px; margin: 0;">
                 <strong>Nr:</strong> {{ $statement->statement_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($statement->statement_date)->format('d.m.Y') }}
             </p>
@@ -233,7 +233,7 @@
         @if ($layout == 'classic')
         {{-- NOU: Secțiune evidențiată pentru Titlu, Obiect și detalii --}}
         <div style="background-color: #f8f9fa; padding: 15px; margin-bottom: 15px; text-align: center; border: 1px solid #dee2e6; border-radius: 5px;">
-            <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ</h2>
+            <h2 style="color: {{ $accentColor }}; font-size: 22px; margin: 0 0 10px 0;">SITUAȚIE DE PLATĂ NR. {{ $statementIndex ?? '' }}</h2>
             <p style="font-size: 11px; margin: 0;">
                 <strong>Nr:</strong> {{ $statement->statement_number }} | <strong>Data:</strong> {{ \Carbon\Carbon::parse($statement->statement_date)->format('d.m.Y') }}
             </p>

@@ -17,11 +17,6 @@
             <tr>
                 <td>
                     <strong>{{ $offer->offer_number }}</strong>
-                    @if($offer->paymentStatement)
-                        <a href="{{ route('situatii-plata.index', ['search' => $offer->offer_number]) }}" class="ms-2" title="Vezi Situația de Plată asociată">
-                            <i class="fa-solid fa-file-invoice text-success"></i>
-                        </a>
-                    @endif
                 </td>
                 <td>{{ $offer->client->name }}</td>
                 <td id="assign-cell-{{ $offer->id }}">
@@ -80,6 +75,11 @@
                     </div>
                 </td>
                 <td class="text-center">
+                    {{-- NOUL BUTON PENTRU SITUAȚII DE PLATĂ --}}
+                    <a href="{{ route('oferte.situatii-plata.index', $offer->id) }}" class="btn btn-sm btn-secondary" title="Situații de plată">
+                        <i class="fa-solid fa-file-invoice-dollar text-success"></i>
+                    </a>
+
                     <a href="{{ route('oferte.show', $offer->id) }}" class="btn btn-sm btn-secondary" title="Vezi"><i class="fa-solid fa-eye"></i></a>
                     <a href="{{ route('oferte.edit', $offer->id) }}" class="btn btn-sm btn-secondary" title="Editează"><i class="fa-solid fa-pencil"></i></a>
                     <a href="{{ route('oferte.pdf', $offer->id) }}" class="btn btn-sm btn-secondary" title="Descarcă PDF" target="_blank" data-swup-ignore>

@@ -12,10 +12,16 @@ class CompanyProfileController extends Controller
     /**
      * Afișează formularul cu profilul firmei.
      */
-    public function show()
+        public function show()
     {
-        // Preluăm profilul de la firmă
-        $profile = Auth::user()->company->companyProfile ?? new CompanyProfile();
+        // Preluăm profilul firmei
+        $profile = Auth::user()->company->companyProfile;
+
+        // Dacă profilul nu există, inițializăm un obiect nou cu valori predefinite
+        if (!$profile) {
+            $profile = new CompanyProfile();
+            $profile->company_name = 'Nume Firma SRL'; // Valoarea predefinită
+        }
         
         return view('profile.show', compact('profile'));
     }

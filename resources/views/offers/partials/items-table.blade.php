@@ -35,15 +35,19 @@
                         <tr class="offer-item-row">
                             <td>
                                 <input type="text" name="items[{{ $index }}][description]" class="form-control form-control-sm description-input" value="{{ $item['description'] }}" required>
-                                <input type="hidden" name="items[{{ $index }}][material_price]" class="price-input-hidden material-price-hidden" value="{{ $item['material_price'] ?? '0.00' }}">
-                                <input type="hidden" name="items[{{ $index }}][labor_price]" class="price-input-hidden labor-price-hidden" value="{{ $item['labor_price'] ?? '0.00' }}">
-                                <input type="hidden" name="items[{{ $index }}][equipment_price]" class="price-input-hidden equipment-price-hidden" value="{{ $item['equipment_price'] ?? '0.00' }}">
+                                {{-- Am formatat valorile ascunse pentru a asigura consistența --}}
+                                <input type="hidden" name="items[{{ $index }}][material_price]" class="price-input-hidden material-price-hidden" value="{{ number_format($item['material_price'] ?? 0, 4, '.', '') }}">
+                                <input type="hidden" name="items[{{ $index }}][labor_price]" class="price-input-hidden labor-price-hidden" value="{{ number_format($item['labor_price'] ?? 0, 4, '.', '') }}">
+                                <input type="hidden" name="items[{{ $index }}][equipment_price]" class="price-input-hidden equipment-price-hidden" value="{{ number_format($item['equipment_price'] ?? 0, 4, '.', '') }}">
                             </td>
                             <td><input type="text" name="items[{{ $index }}][unit_measure]" class="form-control form-control-sm" value="{{ $item['unit_measure'] }}" required></td>
-                            <td><input type="number" name="items[{{ $index }}][quantity]" class="form-control form-control-sm quantity" step="0.01" value="{{ $item['quantity'] }}" required></td>
-                            @if($settings->show_material_column) <td><input type="number" class="form-control form-control-sm price-input-visible material-price-visible" step="0.01" value="{{ number_format($item['material_price'] ?? 0, 4, '.', '') }}"></td> @endif
-                            @if($settings->show_labor_column) <td><input type="number" class="form-control form-control-sm price-input-visible labor-price-visible" step="0.01" value="{{ $item['labor_price'] ?? '0.00' }}"></td> @endif
-                            @if($settings->show_equipment_column) <td><input type="number" class="form-control form-control-sm price-input-visible equipment-price-visible" step="0.01" value="{{ $item['equipment_price'] ?? '0.00' }}"></td> @endif
+                            {{-- Am schimbat step="0.01" în "any" și am formatat valoarea --}}
+                            <td><input type="number" name="items[{{ $index }}][quantity]" class="form-control form-control-sm quantity" step="any" value="{{ number_format($item['quantity'] ?? 0, 4, '.', '') }}" required></td>
+                            
+                            @if($settings->show_material_column) <td><input type="number" class="form-control form-control-sm price-input-visible material-price-visible" step="any" value="{{ number_format($item['material_price'] ?? 0, 4, '.', '') }}"></td> @endif
+                            @if($settings->show_labor_column) <td><input type="number" class="form-control form-control-sm price-input-visible labor-price-visible" step="any" value="{{ number_format($item['labor_price'] ?? 0, 4, '.', '') }}"></td> @endif
+                            @if($settings->show_equipment_column) <td><input type="number" class="form-control form-control-sm price-input-visible equipment-price-visible" step="any" value="{{ number_format($item['equipment_price'] ?? 0, 4, '.', '') }}"></td> @endif
+                            
                             @if($settings->show_unit_price_column) <td class="text-end align-middle unit-price-total">0.00</td> @endif
                             <td class="text-end align-middle line-total">0.00</td>
                             <td><button type="button" class="btn btn-sm btn-danger remove-item-btn">X</button></td>

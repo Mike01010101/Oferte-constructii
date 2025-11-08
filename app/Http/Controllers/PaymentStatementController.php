@@ -8,75 +8,93 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use App\Services\PaymentStatementCalculationService;
-use App\Services\CalculationService;
 
 class PaymentStatementController extends Controller
 {
-    public function index(Request $request)
-    {
-        $searchTerm = $request->input('search');
-
-        $statementsQuery = Auth::user()->company->paymentStatements()
-            ->with(['client', 'offer']) // Încărcăm relațiile
-            ->when($searchTerm, function ($query, $searchTerm) {
-                $query->where(function ($q) use ($searchTerm) {
-                    $q->where('statement_number', 'like', "%{$searchTerm}%")
-                      ->orWhereHas('client', function ($clientQuery) use ($searchTerm) {
-                          $clientQuery->where('name', 'like', "%{$searchTerm}%");
-                      })
-                      ->orWhereHas('offer', function ($offerQuery) use ($searchTerm) {
-                          $offerQuery->where('offer_number', 'like', "%{$searchTerm}%");
-                      });
-                });
-            })
-            ->latest('statement_date');
-
-        $statements = $statementsQuery->paginate(15)->appends($request->query());
-
-        return view('payment-statements.index', compact('statements', 'searchTerm'));
-    }
     /**
-     * Afișează formularul de creare a unei noi situații de plată,
-     * pre-populat cu datele din oferta originală.
+     * NOU: Afișează lista de situații de plată PENTRU O ANUMITĂ OFERTĂ.
+     */
+    public function index(Offer $offer)
+    {
+        if ($offer->company_id !== Auth::user()->company_id) { abort(403); }
+
+        // Încărcăm situațiile de plată asociate ofertei
+        $statements = $offer->paymentStatements()->latest('statement_date')->paginate(15);
+
+        return view('payment-statements.index', compact('offer', 'statements'));
+    }
+
+    /**
+     * NOU: Afișează formularul de creare, pre-calculând cantitățile rămase.
      */
     public function create(Offer $offer)
     {
         if ($offer->company_id !== Auth::user()->company_id) { abort(403); }
 
-        // Pre-populăm datele situației de plată cu cele din ofertă
+        // Preluăm toate situațiile de plată anterioare pentru a calcula totalurile decontate
+        $previousStatements = $offer->paymentStatements()->with('items')->get();
+
+        // Construim un array cu cantitățile deja decontate pentru fiecare descriere de articol
+        $decontatedQuantities = [];
+        foreach ($previousStatements as $statement) {
+            foreach ($statement->items as $item) {
+                // Folosim descrierea ca o cheie unică
+                $key = $item->description;
+                if (!isset($decontatedQuantities[$key])) {
+                    $decontatedQuantities[$key] = 0;
+                }
+                $decontatedQuantities[$key] += $item->quantity;
+            }
+        }
+
+        // Creăm o colecție de itemi pentru noua situație, calculând cantitățile rămase
+        $newItems = $offer->items->map(function ($offerItem) use ($decontatedQuantities) {
+            $key = $offerItem->description;
+            $decontatedQty = $decontatedQuantities[$key] ?? 0;
+            
+            // Clonăm itemul din ofertă pentru a nu-l modifica direct
+            $newItem = $offerItem->replicate(); 
+            
+            // Calculăm cantitatea rămasă și ne asigurăm că nu este negativă
+            $newItem->quantity = max(0, $offerItem->quantity - $decontatedQty); 
+            
+            return $newItem;
+        })->filter(function ($item) {
+            // Eliminăm itemii care au fost deja complet decontați
+            return $item->quantity > 0;
+        });
+
+        // Pre-populăm datele situației de plată cu noul format
+        $nextStatementNumber = 'SP' . ($previousStatements->count() + 1) . ' - ' . $offer->offer_number;
         $statement = new PaymentStatement([
             'client_id' => $offer->client_id,
             'object' => $offer->object,
-            'statement_number' => 'SP-' . $offer->offer_number,
+            'statement_number' => $nextStatementNumber,
             'statement_date' => now(),
             'notes' => $offer->notes,
         ]);
-
-        // Copiem itemii
-        $items = $offer->items;
 
         $company = Auth::user()->company;
         $clients = $company->clients()->orderBy('name')->get();
         $settings = $company->offerSetting;
 
-        // Folosim o vedere similară cu cea de editare ofertă
         return view('payment-statements.create', [
             'offer' => $offer,
             'statement' => $statement,
-            'items' => $items,
+            'items' => $newItems, // Trimitem itemii cu cantitățile calculate
             'clients' => $clients,
             'settings' => $settings,
         ]);
     }
 
     /**
-     * Salvează noua situație de plată în baza de date.
+     * NOU: Salvează noua situație de plată. Se așteaptă ID-ul ofertei.
      */
-    public function store(Request $request)
+    public function store(Request $request, Offer $offer)
     {
+        if ($offer->company_id !== Auth::user()->company_id) { abort(403); }
+
         $validatedData = $request->validate([
-            'offer_id' => 'required|exists:offers,id',
             'client_id' => 'required|exists:clients,id',
             'statement_number' => 'required|string',
             'statement_date' => 'required|date',
@@ -102,8 +120,9 @@ class PaymentStatementController extends Controller
                 $subtotal += ($item['quantity'] ?? 0) * $lineTotal;
             }
 
-            $statement = $company->paymentStatements()->create([
-                'offer_id' => $validatedData['offer_id'],
+            // Creăm situația de plată direct prin relația cu oferta
+            $statement = $offer->paymentStatements()->create([
+                'company_id' => $company->id,
                 'client_id' => $validatedData['client_id'],
                 'statement_number' => $validatedData['statement_number'],
                 'statement_date' => Carbon::parse($validatedData['statement_date']),
@@ -119,31 +138,28 @@ class PaymentStatementController extends Controller
             }
 
             DB::commit();
-            // TODO: Redirecționăm către lista de situații de plată, pe care o vom crea mai târziu
-            return redirect()->route('oferte.index')->with('success', 'Situația de plată a fost creată cu succes!');
+            // Redirecționăm către lista de situații de plată A ACESTEI OFERTE
+            return redirect()->route('oferte.situatii-plata.index', $offer)->with('success', 'Situația de plată a fost creată cu succes!');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'A apărut o eroare: ' . $e->getMessage())->withInput();
         }
     }
+    
     /**
-     * Afișează formularul de editare pentru o situație de plată existentă.
+     * Afișează formularul de editare pentru o situație de plată.
      */
-    public function edit(PaymentStatement $statement)
+    public function edit(Offer $offer, PaymentStatement $statement)
     {
-        if ($statement->company_id !== Auth::user()->company_id) { abort(403); }
-
-        // Încărcăm relația cu oferta originală pentru a avea acces la numărul ei
-        $statement->load('offer');
+        if ($statement->company_id !== Auth::user()->company_id || $statement->offer_id !== $offer->id) { abort(403); }
 
         $company = Auth::user()->company;
         $clients = $company->clients()->orderBy('name')->get();
         $settings = $company->offerSetting;
         
-        // Trimitem datele către vederea de editare
         return view('payment-statements.edit', [
             'statement' => $statement,
-            'offer' => $statement->offer, // Trimitem și oferta originală
+            'offer' => $offer,
             'items' => $statement->items,
             'clients' => $clients,
             'settings' => $settings,
@@ -153,19 +169,23 @@ class PaymentStatementController extends Controller
     /**
      * Actualizează o situație de plată existentă.
      */
-    public function update(Request $request, PaymentStatement $statement)
+    public function update(Request $request, Offer $offer, PaymentStatement $statement)
     {
-        if ($statement->company_id !== Auth::user()->company_id) { abort(403); }
+        if ($statement->company_id !== Auth::user()->company_id || $statement->offer_id !== $offer->id) { abort(403); }
 
         $validatedData = $request->validate([
-            // Nu mai validăm offer_id, deoarece nu se poate schimba
             'client_id' => 'required|exists:clients,id',
             'statement_number' => 'required|string',
             'statement_date' => 'required|date',
             'object' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            // ... (regulile de validare pentru itemi)
+            'items.*.description' => 'required|string',
+            'items.*.quantity' => 'required|numeric|min:0',
+            'items.*.unit_measure' => 'required|string|max:20',
+            'items.*.material_price' => 'nullable|numeric|min:0',
+            'items.*.labor_price' => 'nullable|numeric|min:0',
+            'items.*.equipment_price' => 'nullable|numeric|min:0',
         ]);
         
         try {
@@ -195,7 +215,7 @@ class PaymentStatementController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('situatii-plata.index')->with('success', 'Situația de plată a fost actualizată!');
+            return redirect()->route('oferte.situatii-plata.index', $offer)->with('success', 'Situația de plată a fost actualizată!');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'A apărut o eroare: ' . $e->getMessage())->withInput();
@@ -203,26 +223,49 @@ class PaymentStatementController extends Controller
     }
 
     /**
+     * Șterge o situație de plată.
+     */
+    public function destroy(Offer $offer, PaymentStatement $statement)
+    {
+        if ($statement->company_id !== Auth::user()->company_id || $statement->offer_id !== $offer->id) { abort(403); }
+
+        $statement->items()->delete();
+        $statement->delete();
+
+        return redirect()->route('oferte.situatii-plata.index', $offer)->with('success', 'Situația de plată a fost ștearsă.');
+    }
+
+    /**
      * Generează și descarcă PDF-ul pentru o situație de plată.
      */
-    public function downloadPDF(PaymentStatement $statement)
+    public function downloadPDF(Offer $offer, PaymentStatement $statement)
     {
-        if ($statement->company_id !== Auth::user()->company_id) { abort(403); }
+        if ($statement->company_id !== Auth::user()->company_id || $statement->offer_id !== $offer->id) { abort(403); }
         
-        $statement->load(['client', 'items', 'offer', 'company.companyProfile', 'company.templateSetting', 'company.offerSetting']);
+        $statement->load(['client', 'items', 'company.companyProfile', 'company.templateSetting', 'company.offerSetting']);
+        
+        // NOU: Calculăm indexul situației de plată
+        $allStatements = $offer->paymentStatements()->orderBy('statement_date', 'asc')->get();
+        $statementIndex = null;
+        foreach ($allStatements as $index => $stmt) {
+            if ($stmt->id == $statement->id) {
+                $statementIndex = $index + 1; // Indexul este 0-based, deci adăugăm 1
+                break;
+            }
+        }
 
-        // Folosim serviciul de calcul și trimitem variabila
-        $calculations = new CalculationService($statement);
+        $calculations = new \App\Services\CalculationService($statement);
         
         $pdfFileName = 'Situatie-Plata-' . str_replace('/', '-', $statement->statement_number) . '.pdf';
         
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('payment-statements.pdf', [
             'statement' => $statement,
             'calculations' => $calculations,
-            'offer' => $statement->offer,
+            'offer' => $offer,
             'companyProfile' => $statement->company->companyProfile,
             'templateSettings' => $statement->company->templateSetting,
-            'offerSettings' => $statement->company->offerSetting
+            'offerSettings' => $statement->company->offerSetting,
+            'statementIndex' => $statementIndex, // NOU: Trimitem indexul către view
         ]);
         
         return $pdf->download($pdfFileName);

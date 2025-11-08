@@ -21,8 +21,7 @@ class OfferController extends Controller
 
         $offersQuery = Auth::user()->company->offers()
             // Încărcăm relațiile standard
-            ->with(['client', 'assignedTo'])
-            ->with(['client', 'assignedTo', 'paymentStatement'])
+            ->with(['client', 'assignedTo', 'paymentStatements'])
             ->when($searchTerm, function ($query, $searchTerm) {
                 $query->where(function ($q) use ($searchTerm) {
                     $q->where('offer_number', 'like', "%{$searchTerm}%")
@@ -203,7 +202,7 @@ class OfferController extends Controller
     /**
      * Actualizează o ofertă existentă în baza de date.
      */
-    public function update(Request $request, Offer $oferte)
+        public function update(Request $request, Offer $oferte)
     {
         $offer = $oferte;
         if ($offer->company_id !== Auth::user()->company_id) { abort(403); }
@@ -233,16 +232,12 @@ class OfferController extends Controller
             $settings = Auth::user()->company->offerSetting;
             $items = $request->input('items', []);
 
-            // Încărcăm articolele vechi într-un format ușor de accesat (keyed by description or a unique key if available)
-            // Pentru simplitate, vom folosi un array simplu și îl vom parcurge
             $oldItems = $offer->items;
 
             $subtotal_de_baza = 0;
             $newItemsData = [];
 
             foreach ($items as $index => $item) {
-                // Încercăm să găsim un articol vechi corespunzător. Această logică poate fi îmbunătățită
-                // dacă ai un ID ascuns pentru fiecare articol în formular.
                 $oldItem = $oldItems->get($index); // Presupunem că ordinea se păstrează
 
                 $newItemData = [
@@ -251,7 +246,6 @@ class OfferController extends Controller
                     'unit_measure' => $item['unit_measure'],
                 ];
 
-                // Păstrăm valorile vechi pentru câmpurile care nu sunt afișate/trimise
                 $newItemData['material_price'] = $settings->show_material_column 
                     ? ($item['material_price'] ?? 0) 
                     : ($oldItem->material_price ?? 0);
@@ -264,7 +258,6 @@ class OfferController extends Controller
                     ? ($item['equipment_price'] ?? 0) 
                     : ($oldItem->equipment_price ?? 0);
                 
-                // Calculăm totalul liniei pe baza tuturor valorilor (vechi + noi)
                 $lineTotalValue = $newItemData['material_price'] + $newItemData['labor_price'] + $newItemData['equipment_price'];
                 $newItemData['total'] = $newItemData['quantity'] * $lineTotalValue;
                 
@@ -390,7 +383,8 @@ class OfferController extends Controller
             return response()->json(['error' => 'Neautorizat'], 403);
         }
 
-        $hasStatement = $offer->paymentStatement()->exists();
+        // Am schimbat aici la plural pentru a se potrivi cu noua relație hasMany
+        $hasStatement = $offer->paymentStatements()->exists();
 
         return response()->json(['has_statement' => $hasStatement]);
     }
