@@ -1,9 +1,6 @@
 version: '3.8'
-
 services:
-# Serviciul PHP
   app-service:
-    image: calcul-deviz-app:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -13,16 +10,12 @@ services:
     restart: unless-stopped
     command: sh -c "/usr/local/bin/wait-for-it.sh mariadb-service:3306 --timeout=30 --strict -- php-fpm"
     volumes:
-      # Mapăm fișierul .env
       - ./.env:/var/www/.env
-      # Montăm un singur volum partajat pentru tot codul, inclusiv folderul storage.
       - app-code:/var/www
     networks:
       - calcul-deviz-network
     depends_on:
       - mariadb-service
-
-  # Serviciul Nginx
   nginx-service:
     build:
       context: .
@@ -32,15 +25,11 @@ services:
     ports:
       - "8088:80"
     volumes:
-      # NOU: Nginx vede ACELAȘI volum cu codul aplicației ca și serviciul PHP
-      # Acum, când PHP creează symlink-ul 'public/storage', Nginx îl va putea vedea și folosi corect.
       - app-code:/var/www
     networks:
       - calcul-deviz-network
     depends_on:
       - app-service
-
-  # Serviciul MariaDB
   mariadb-service:
     image: mariadb:latest
     container_name: calcul_deviz_db
@@ -54,14 +43,11 @@ services:
       - db-data:/var/lib/mysql
     networks:
       - calcul-deviz-network
-
 networks:
   calcul-deviz-network:
     driver: bridge
-
 volumes:
   db-data:
     driver: local
-  # Definim un singur volum pentru codul aplicației.
   app-code:
     driver: local
