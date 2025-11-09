@@ -42,6 +42,11 @@
     @endif
     
     @stack('head_links')
+    <style>
+        .badge[class*="bg-"] {
+            color: #FFFFFF !important;
+        }
+    </style>
 </head>
 <body
     @if(session('success')) data-success-message="{{ session('success') }}" @endif
@@ -153,7 +158,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title">Confirmare</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body"><p>Doriți să creați o Situație de Plată pentru această ofertă?</p></div>
+                <div class="modal-body"><p>Doriți să creați o Situație de plată pentru această ofertă?</p></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
                     <a href="#" class="btn btn-primary" id="confirmCreateStatementBtn">Da, creează</a>

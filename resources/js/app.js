@@ -591,7 +591,7 @@ function handleQuickStatusUpdate() {
                                 updateStatusAjax(url, newStatus, csrfToken, offerId);
                             } else {
                                 // Dacă nu există, afișăm modal-ul de confirmare
-                                const createUrl = `/oferte/${offerId}/creeaza-situatie-plata`;
+                                const createUrl = `/oferte/${offerId}/situatii-plata/creeaza`;
                                 const modalElement = document.getElementById('createPaymentStatementModal');
                                 if (modalElement) {
                                     const modal = new Modal(modalElement);
